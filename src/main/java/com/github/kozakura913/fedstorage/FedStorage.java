@@ -37,7 +37,7 @@ public class FedStorage {
 	private ArrayList<ItemStack> recv_queue=new ArrayList<>();//転送処理バッファ
 	private static int RECV_BUFFER_LIMIT=10;
 	private static FedStorage INSTANCE=null;
-	private static long VERSION=1;
+	private static long VERSION=2;
 	public static synchronized void init() {
 		if(INSTANCE!=null)return;
 		INSTANCE=new FedStorage();
@@ -59,6 +59,8 @@ public class FedStorage {
 				try {
 					while(true) {
 						Thread.sleep(1000);
+						tcp_dos.writeInt(-1);//NOP
+						tcp_dos.flush();
 						try {
 							EnderStorageManager storage = EnderStorageManager.instance(false);
 							ArrayList<AbstractEnderStorage> list=new ArrayList<>();
