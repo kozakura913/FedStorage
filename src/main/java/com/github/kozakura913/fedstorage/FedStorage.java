@@ -32,23 +32,23 @@ public class FedStorage {
 	private ArrayList<ItemStack> recv_queue=new ArrayList<>();//転送処理バッファ
 	private static int RECV_BUFFER_LIMIT=10;
 	private static FedStorage INSTANCE=null;
-	private static long VERSION=2;
+	private static long VERSION=3;
 	public static synchronized void init() {
 		if(INSTANCE!=null)return;
 		INSTANCE=new FedStorage();
 	}
 	private FedStorage(){
-    	new Thread(()->{
-    		try {
-	    		while(true) {
-	        		connect("127.0.0.1",3030);
-	        		System.err.println("Connection Lost. Retry After 10s");
+		new Thread(()->{
+			try {
+				while(true) {
+					connect("127.0.0.1",3030);
+					System.err.println("Connection Lost. Retry After 10s");
 					Thread.sleep(10*1000);
-	        	}
+				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-    	},"FedStorage-ConnectLoop").start();
+		},"FedStorage-ConnectLoop").start();
 	}
 	private void connect(String host, int port) {
 		try {
@@ -98,8 +98,8 @@ public class FedStorage {
 			e.printStackTrace();
 		}
 	}
-    private synchronized void sync_item(EnderItemStorage s) throws IOException {
-		String id=s.freq.left.name()+","+s.freq.middle.name()+s.freq.right.name();
+	private synchronized void sync_item(EnderItemStorage s) throws IOException {
+		String id=s.freq.left.name()+","+s.freq.middle.name()+","+s.freq.right.name();
 		tcp_dos.writeInt(1);//command
 		tcp_dos.writeUTF(id);
 		tcp_dos.flush();
@@ -107,9 +107,9 @@ public class FedStorage {
 		if(s.isPull) {
 			recv_item(s.recv_buffer);
 		}
-    }
-    private synchronized void sync_fluid(EnderLiquidStorage s) throws IOException {
-		String id=s.freq.left.name()+","+s.freq.middle.name()+s.freq.right.name();
+	}
+	private synchronized void sync_fluid(EnderLiquidStorage s) throws IOException {
+		String id=s.freq.left.name()+","+s.freq.middle.name()+","+s.freq.right.name();
 		tcp_dos.writeInt(1);//command
 		tcp_dos.writeUTF(id);
 		tcp_dos.flush();
@@ -152,10 +152,10 @@ public class FedStorage {
 				send_fluid(copy);
 			}
 		}
-    }
-    private synchronized void send_fluid(FluidStack send_buffer) throws IOException {
-    	if(send_buffer==null)return;
-    	String fluid_name=FluidRegistry.getFluidName(send_buffer);
+	}
+	private synchronized void send_fluid(FluidStack send_buffer) throws IOException {
+		if(send_buffer==null)return;
+		String fluid_name=FluidRegistry.getFluidName(send_buffer);
 		if(fluid_name==null)return;
 		tcp_dos.writeInt(4);//command
 		tcp_dos.writeUTF(fluid_name);
@@ -163,16 +163,16 @@ public class FedStorage {
 		writeNBT(send_buffer.tag,tcp_dos);
 		tcp_dos.flush();
 		send_buffer.amount=0;
-    }
-    private synchronized FluidStack recv_fluid(FluidStack recv_buffer) throws IOException {
-    	int available=Integer.MAX_VALUE;
-    	String fluid_name="";
-    	if(recv_buffer!=null) {
-    		available=Integer.MAX_VALUE-recv_buffer.amount;
-    		fluid_name=recv_buffer.getFluid().getName();
-    		if(fluid_name==null)fluid_name="";
-    	}
-    	if(available<=0)return recv_buffer;
+	}
+	private synchronized FluidStack recv_fluid(FluidStack recv_buffer) throws IOException {
+		int available=Integer.MAX_VALUE;
+		String fluid_name="";
+		if(recv_buffer!=null) {
+			available=Integer.MAX_VALUE-recv_buffer.amount;
+			fluid_name=recv_buffer.getFluid().getName();
+			if(fluid_name==null)fluid_name="";
+		}
+		if(available<=0)return recv_buffer;
 		tcp_dos.writeInt(5);//command
 		tcp_dos.writeUTF(fluid_name);
 		tcp_dos.writeInt(available);
@@ -190,21 +190,21 @@ public class FedStorage {
 		DataInputStream pack_dis = new DataInputStream(pack_bis);
 		String name=pack_dis.readUTF();
 		int amount=pack_dis.readInt();
-    	//NBTは必ず存在するわけではない
+		//NBTは必ず存在するわけではない
 		NBTTagCompound nbt=readNBT(pack_dis);
 		if(fluid_name.isEmpty()&&name!=null&&!name.isEmpty()) {
 			fluid_name=name;
 			if(recv_buffer==null) {
-	        	Fluid f=FluidRegistry.getFluid(fluid_name);
+				Fluid f=FluidRegistry.getFluid(fluid_name);
 				recv_buffer=new FluidStack(f, amount,nbt);
 			}
 		}
 		recv_buffer.amount=amount;
 		return recv_buffer;
-    }
-    private synchronized void recv_item(ArrayList<ItemStack> recv_buffer) throws IOException {
-    	int available=RECV_BUFFER_LIMIT-recv_buffer.size();
-    	if(available<=0)return;
+	}
+	private synchronized void recv_item(ArrayList<ItemStack> recv_buffer) throws IOException {
+		int available=RECV_BUFFER_LIMIT-recv_buffer.size();
+		if(available<=0)return;
 		tcp_dos.writeInt(3);//command
 		tcp_dos.writeInt(available);
 		tcp_dos.flush();
@@ -216,57 +216,57 @@ public class FedStorage {
 		DataInputStream pack_dis = new DataInputStream(pack_bis);
 		int items_count=pack_dis.readInt();
 		for(int i=0;i<items_count;i++) {
-        	pack_dis.readUTF();//アイテムID
-        	pack_dis.readInt();//ダメージ値
-        	int stack_size=pack_dis.readInt();//スタックサイズ
-        	//NBTにはアイテム名など含まれるのでこれだけでもいい
-        	NBTTagCompound nbt = readNBT(pack_dis);
-        	ItemStack is=new ItemStack(nbt);
-        	is.setCount(stack_size);
-        	recv_queue.add(is);
+			pack_dis.readUTF();//アイテムID
+			pack_dis.readInt();//ダメージ値
+			int stack_size=pack_dis.readInt();//スタックサイズ
+			//NBTにはアイテム名など含まれるのでこれだけでもいい
+			NBTTagCompound nbt = readNBT(pack_dis);
+			ItemStack is=new ItemStack(nbt);
+			is.setCount(stack_size);
+			recv_queue.add(is);
 		}
 		if(recv_queue.isEmpty())return;
-    	synchronized(recv_buffer){
-        	recv_buffer.addAll(recv_queue);
-        	recv_queue.clear();
-    	}
-    }
-    private synchronized void send_item(ArrayList<ItemStack> send_buffer) throws IOException {
-    	ArrayList<ItemStack> copy;
-    	synchronized(send_buffer){
-    		if(send_buffer.isEmpty())return;
-        	copy=(ArrayList<ItemStack>) send_buffer.clone();
-        	send_buffer.clear();
-    	}
-    	if(!reject_buffer.isEmpty()) {
-    		copy.addAll(reject_buffer);
-    		reject_buffer.clear();
-    	}
-   		reject_buffer.addAll(copy);
-    	//アイテム数
-    	int item_count=0;
-    	for(ItemStack stack : copy) {
-    		if(stack==null)continue;
-    		Item item = stack.getItem();
-    		if(item==Items.AIR||item==null)continue;
-    		item_count++;
-    		System.out.println(item);
-    	}
-    	tcp_dos.writeByte(2);//command
-    	tcp_dos.writeInt(item_count);
-    	for(ItemStack stack : copy) {
-    		if(stack==null)continue;
-    		Item item = stack.getItem();
-    		if(item==Items.AIR||item==null)continue;
-    		ResourceLocation nameId = item.getRegistryName();
-    		tcp_dos.writeUTF(nameId.getResourceDomain()+":"+nameId.getResourcePath());//アイテムID
-    		tcp_dos.writeInt(stack.getItemDamage());//ダメージ値
-    		tcp_dos.writeInt(stack.getCount());//スタックサイズ
-        	NBTTagCompound nbt = stack.serializeNBT();
-        	//NBTにはアイテム名など含まれるのでこれだけでもいい
-        	writeNBT(nbt,tcp_dos);
-    	}
-    	tcp_dos.flush();
+		synchronized(recv_buffer){
+			recv_buffer.addAll(recv_queue);
+			recv_queue.clear();
+		}
+	}
+	private synchronized void send_item(ArrayList<ItemStack> send_buffer) throws IOException {
+		ArrayList<ItemStack> copy;
+		synchronized(send_buffer){
+			if(send_buffer.isEmpty())return;
+			copy=(ArrayList<ItemStack>) send_buffer.clone();
+			send_buffer.clear();
+		}
+		if(!reject_buffer.isEmpty()) {
+			copy.addAll(reject_buffer);
+			reject_buffer.clear();
+		}
+		reject_buffer.addAll(copy);
+		//アイテム数
+		int item_count=0;
+		for(ItemStack stack : copy) {
+			if(stack==null)continue;
+			Item item = stack.getItem();
+			if(item==Items.AIR||item==null)continue;
+			item_count++;
+			System.out.println(item);
+		}
+		tcp_dos.writeByte(2);//command
+		tcp_dos.writeInt(item_count);
+		for(ItemStack stack : copy) {
+			if(stack==null)continue;
+			Item item = stack.getItem();
+			if(item==Items.AIR||item==null)continue;
+			ResourceLocation nameId = item.getRegistryName();
+			tcp_dos.writeUTF(nameId.getResourceDomain()+":"+nameId.getResourcePath());//アイテムID
+			tcp_dos.writeInt(stack.getItemDamage());//ダメージ値
+			tcp_dos.writeInt(stack.getCount());//スタックサイズ
+			NBTTagCompound nbt = stack.serializeNBT();
+			//NBTにはアイテム名など含まれるのでこれだけでもいい
+			writeNBT(nbt,tcp_dos);
+		}
+		tcp_dos.flush();
 		int packet_length=tcp_dis.readInt();
 		if(packet_length<=0)return;
 		byte[] bb=new byte[packet_length];
@@ -276,41 +276,41 @@ public class FedStorage {
 		int reject_count=dis.readInt();
 		reject_buffer.clear();
 		if(reject_count>0) {
-    		for(int i=0;i<reject_count;i++) {
-    			int index=dis.readInt();
-    			reject_buffer.add(copy.get(index));
-    		}
+			for(int i=0;i<reject_count;i++) {
+				int index=dis.readInt();
+				reject_buffer.add(copy.get(index));
+			}
 		}
-    	if(reject_buffer.isEmpty())return;
-    	synchronized(send_buffer){
-    		send_buffer.addAll(reject_buffer);
-    	}
-    }
-    private NBTTagCompound readNBT(DataInputStream dis) throws IOException {
-    	//NBTサイズ
-    	int nbt_length=dis.readShort();
-    	if(nbt_length<1)return null;
-    	byte[] nbt_bytes=new byte[nbt_length];
+		if(reject_buffer.isEmpty())return;
+		synchronized(send_buffer){
+			send_buffer.addAll(reject_buffer);
+		}
+	}
+	private NBTTagCompound readNBT(DataInputStream dis) throws IOException {
+		//NBTサイズ
+		int nbt_length=dis.readShort();
+		if(nbt_length<1)return null;
+		byte[] nbt_bytes=new byte[nbt_length];
 		//NBTタグ
-    	dis.readFully(nbt_bytes);
-    	ByteArrayInputStream nbt_bis = new ByteArrayInputStream(nbt_bytes);
-    	DataInputStream nbt_dis = new DataInputStream(nbt_bis);
+		dis.readFully(nbt_bytes);
+		ByteArrayInputStream nbt_bis = new ByteArrayInputStream(nbt_bytes);
+		DataInputStream nbt_dis = new DataInputStream(nbt_bis);
 		return CompressedStreamTools.read(nbt_dis);
-    }
-    private void writeNBT(NBTTagCompound nbt,DataOutputStream dos) throws IOException {
-    	if(nbt==null) {
-    		dos.writeShort(0);
-    		return;
-    	}
-    	ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    	DataOutputStream nbt_dos = new DataOutputStream(bos);
-    	CompressedStreamTools.write(nbt,nbt_dos);
-    	byte[] bb= bos.toByteArray();
-    	int send_length=bb.length;
-    	//NBTサイズ
+	}
+	private void writeNBT(NBTTagCompound nbt,DataOutputStream dos) throws IOException {
+		if(nbt==null) {
+			dos.writeShort(0);
+			return;
+		}
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		DataOutputStream nbt_dos = new DataOutputStream(bos);
+		CompressedStreamTools.write(nbt,nbt_dos);
+		byte[] bb= bos.toByteArray();
+		int send_length=bb.length;
+		//NBTサイズ
 		dos.writeShort(send_length);
 		if(send_length<1)return;
 		//NBTタグ
 		dos.write(bb);
-    }
+	}
 }

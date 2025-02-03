@@ -1,0 +1,9 @@
+{
+	"ingredients": {
+		"wool": "com.github.kozakura913.fedstorage.recipe.Factories$WoolIngredientFactory"
+	},
+	"recipes": {
+		"crafting_recipe": "com.github.kozakura913.fedstorage.recipe.Factories$RecipeFactory",
+		"recolour_recipe": "com.github.kozakura913.fedstorage.recipe.Factories$ReColourFactory"
+	}
+}
