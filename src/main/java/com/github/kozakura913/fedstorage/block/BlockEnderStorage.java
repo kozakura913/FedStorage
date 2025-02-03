@@ -298,8 +298,8 @@ public class BlockEnderStorage extends Block implements ITileEntityProvider {
 
     public static enum Type implements IStringSerializable {
 
-        CHEST(0, "ender_chest"),
-        TANK(1, "ender_tank");
+        CHEST(0, "fed_chest"),
+        TANK(1, "fed_tank");
 
         public static final Type[] VALUES = new Type[values().length];
         private final int metadata;

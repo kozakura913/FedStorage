@@ -1,7 +1,7 @@
 {
-	"type": "enderstorage:recolour_recipe",
+	"type": "fedstorage:recolour_recipe",
 	"result": {
-		"item": "enderstorage:ender_pouch",
+		"item": "fedstorage:ender_pouch",
 		"data": 0
 	}
 }

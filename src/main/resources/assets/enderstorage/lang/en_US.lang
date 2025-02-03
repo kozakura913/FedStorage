@@ -1,18 +1,18 @@
-tile.ender_chest.name=Ender Chest
-tile.ender_tank.name=Ender Tank
-item.ender_pouch.name=Ender Pouch
-enderstorage.serverop=Operator
+tile.fed_chest.name=Fed Chest
+tile.fed_tank.name=Fed Tank
+item.fed_pouch.name=Fed Pouch
+fedstorage.serverop=Operator
 fluid.botania_mana=Mana
 
-enderstorage.command.usage=enderstorage <freq>|(<colour> <colour> <colour>) [owner]
-enderstorage.command.no_arguments=Invalid number of arguments
-enderstorage.command.no_freq=Invalid freq
-enderstorage.command.no_colour=Invalid color: %s
+fedstorage.command.usage=enderstorage <freq>|(<colour> <colour> <colour>) [owner]
+fedstorage.command.no_arguments=Invalid number of arguments
+fedstorage.command.no_freq=Invalid freq
+fedstorage.command.no_colour=Invalid color: %s
 
-enderstorage.tile.mode.push=Push mode enabled
-enderstorage.tile.mode.default=Push mode disabled
-enderstorage.tooltip.dimension_id=Dimension ID: %s
-enderstorage.tooltip.frequency=Frequency: %s
-enderstorage.tooltip.autopickup_enabled=Auto-pickup: Enabled
-enderstorage.tooltip.autopickup_disabled=Auto-pickup: Disabled
-enderstorage.tooltip.craft_with_to_make_autopickup=Craft with %s to enable autopickup
+fedstorage.tile.mode.push=Push mode enabled
+fedstorage.tile.mode.default=Push mode disabled
+fedstorage.tooltip.dimension_id=Dimension ID: %s
+fedstorage.tooltip.frequency=Frequency: %s
+fedstorage.tooltip.autopickup_enabled=Auto-pickup: Enabled
+fedstorage.tooltip.autopickup_disabled=Auto-pickup: Disabled
+fedstorage.tooltip.craft_with_to_make_autopickup=Craft with %s to enable autopickup

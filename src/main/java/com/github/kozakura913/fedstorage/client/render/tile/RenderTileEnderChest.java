@@ -39,7 +39,7 @@ public class RenderTileEnderChest extends TileEntitySpecialRenderer<TileEnderChe
         ccrs.reset();
         GlStateManager.color(1, 1, 1, 1);
 
-        TextureUtils.changeTexture("enderstorage:textures/enderchest.png");
+        TextureUtils.changeTexture("fedstorage:textures/enderchest.png");
         GlStateManager.pushMatrix();
         GlStateManager.enableRescaleNormal();
         GlStateManager.color(1, 1, 1, 1);
@@ -63,7 +63,7 @@ public class RenderTileEnderChest extends TileEntitySpecialRenderer<TileEnderChe
                 new Rotation(time / 3, new Vector3(0, 1, 0)), 0.04);
 
         GlStateManager.disableLighting();
-        TextureUtils.changeTexture("enderstorage:textures/hedronmap.png");
+        TextureUtils.changeTexture("fedstorage:textures/hedronmap.png");
         GlStateManager.pushMatrix();
 
         ccrs.startDrawing(7, DefaultVertexFormats.POSITION_TEX_COLOR_NORMAL);
@@ -74,7 +74,7 @@ public class RenderTileEnderChest extends TileEntitySpecialRenderer<TileEnderChe
     }
 
     private static void renderButtons(Frequency freq, int rot, double lidAngle) {
-        TextureUtils.changeTexture("enderstorage:textures/buttons.png");
+        TextureUtils.changeTexture("fedstorage:textures/buttons.png");
 
         drawButton(0, freq.getLeft().getWoolMeta(), rot, lidAngle);
         drawButton(1, freq.getMiddle().getWoolMeta(), rot, lidAngle);

@@ -27,7 +27,7 @@ public class ModItems {
 
     @SideOnly (Side.CLIENT)
     public static void registerModels() {
-        ModelResourceLocation invLocation = new ModelResourceLocation("enderstorage:ender_pouch", "inventory");
+        ModelResourceLocation invLocation = new ModelResourceLocation("fedstorage:ender_pouch", "inventory");
         ModelLoader.setCustomModelResourceLocation(enderPouch, 0, invLocation);
         ModelLoader.setCustomMeshDefinition(enderPouch, (stack) -> invLocation);
         ModelRegistryHelper.register(invLocation, new CCBakeryModel());

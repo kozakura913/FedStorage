@@ -77,13 +77,13 @@ public class RenderTileEnderTank extends TileEntitySpecialRenderer<TileEnderTank
         GlStateManager.translate(x + 0.5, y, z + 0.5);
         GlStateManager.rotate(-90 * (rotation + 2), 0, 1, 0);
 
-        TextureUtils.changeTexture("enderstorage:textures/endertank.png");
+        TextureUtils.changeTexture("fedstorage:textures/endertank.png");
         ccrs.startDrawing(4, POSITION_TEX_COLOR_NORMAL);
         tankModel.render(ccrs);
         valveModel.render(ccrs, new Rotation(valve, new Vector3(0, 0, 1)).at(new Vector3(0, 0.4165, 0)), new UVTranslation(0, freq.hasOwner() ? 13 / 64D : 0));
         ccrs.draw();
 
-        TextureUtils.changeTexture("enderstorage:textures/buttons.png");
+        TextureUtils.changeTexture("fedstorage:textures/buttons.png");
         ccrs.startDrawing(7, POSITION_TEX_COLOR_NORMAL);
         EnumColour[] colours = freq.toArray();
         for (int i = 0; i < 3; i++) {
@@ -96,7 +96,7 @@ public class RenderTileEnderTank extends TileEntitySpecialRenderer<TileEnderTank
         Matrix4 pearlMat = RenderUtils.getMatrix(new Vector3(x + 0.5, y + 0.45 + RenderUtils.getPearlBob(time) * 2, z + 0.5), new Rotation(time / 3, new Vector3(0, 1, 0)), 0.04);
 
         GlStateManager.disableLighting();
-        TextureUtils.changeTexture("enderstorage:textures/hedronmap.png");
+        TextureUtils.changeTexture("fedstorage:textures/hedronmap.png");
         ccrs.startDrawing(4, POSITION_TEX_COLOR_NORMAL);
         CCModelLibrary.icosahedron4.render(ccrs, pearlMat);
         ccrs.draw();

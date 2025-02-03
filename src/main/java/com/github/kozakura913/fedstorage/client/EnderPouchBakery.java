@@ -52,7 +52,7 @@ public class EnderPouchBakery implements IItemBakery, IIconRegister {
 
     @Override
     public void registerIcons(TextureMap map) {
-        String POUCH_PREFIX = "enderstorage:items/pouch/";
+        String POUCH_PREFIX = "fedstorage:items/pouch/";
         String BUTTONS_PREFIX = POUCH_PREFIX + "buttons/";
         String[] position_prefixes = { "left/", "middle/", "right/" };
 

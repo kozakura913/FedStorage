@@ -30,23 +30,23 @@ public class ModBlocks {
         itemEnderStorage = new ItemEnderStorage(blockEnderStorage);
         ForgeRegistries.BLOCKS.register(blockEnderStorage.setRegistryName("ender_storage"));
         ForgeRegistries.ITEMS.register(itemEnderStorage.setRegistryName("ender_storage"));
-        GameRegistry.registerTileEntity(TileEnderChest.class, "Ender Chest");
-        GameRegistry.registerTileEntity(TileEnderTank.class, "Ender Tank");
+        GameRegistry.registerTileEntity(TileEnderChest.class, "Fed Chest");
+        GameRegistry.registerTileEntity(TileEnderTank.class, "Fed Tank");
     }
 
     @SideOnly (Side.CLIENT)
     public static void registerModels() {
         for (int i = 0; i < Type.VALUES.length; i++) {
             Type variant = Type.VALUES[i];
-            ModelResourceLocation location = new ModelResourceLocation("enderstorage:ender_storage", "type=" + variant.getName());
+            ModelResourceLocation location = new ModelResourceLocation("fedstorage:ender_storage", "type=" + variant.getName());
             ModelLoader.setCustomModelResourceLocation(itemEnderStorage, i, location);
         }
 
-        ModelRegistryHelper.register(new ModelResourceLocation("enderstorage:ender_storage", "type=ender_chest"), new EnderChestItemRender());
-        ModelRegistryHelper.register(new ModelResourceLocation("enderstorage:ender_storage", "type=ender_tank"), new EnderTankItemRender());
+        ModelRegistryHelper.register(new ModelResourceLocation("fedstorage:ender_storage", "type=fed_chest"), new EnderChestItemRender());
+        ModelRegistryHelper.register(new ModelResourceLocation("fedstorage:ender_storage", "type=fed_tank"), new EnderTankItemRender());
 
         ModelLoader.setCustomStateMapper(blockEnderStorage, new StateMap.Builder().ignore(BlockEnderStorage.VARIANTS).build());
-        ModelRegistryHelper.register(new ModelResourceLocation("enderstorage:ender_storage", "normal"), ParticleDummyModel.INSTANCE);
+        ModelRegistryHelper.register(new ModelResourceLocation("fedstorage:ender_storage", "normal"), ParticleDummyModel.INSTANCE);
     }
 
 }

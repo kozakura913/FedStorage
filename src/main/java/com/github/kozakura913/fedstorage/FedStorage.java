@@ -3,13 +3,9 @@ package com.github.kozakura913.fedstorage;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInput;
 import java.io.DataInputStream;
-import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.Socket;
 import java.util.ArrayList;
 
@@ -22,7 +18,6 @@ import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompressedStreamTools;
-import net.minecraft.nbt.NBTSizeTracker;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fluids.Fluid;
@@ -43,8 +38,22 @@ public class FedStorage {
 		INSTANCE=new FedStorage();
 	}
 	private FedStorage(){
-    	try {
-			tcp_socket=new Socket("127.0.0.1",3030);
+    	new Thread(()->{
+    		try {
+	    		while(true) {
+	        		connect("127.0.0.1",3030);
+	        		System.err.println("Connection Lost. Retry After 10s");
+					Thread.sleep(10*1000);
+	        	}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+    	},"FedStorage-ConnectLoop").start();
+	}
+	private void connect(String host, int port) {
+		try {
+			System.out.println("Connect to "+host+":"+port);
+			tcp_socket=new Socket(host,port);
 			tcp_socket.setSoTimeout(10000);//10s
 			tcp_dis = new DataInputStream(tcp_socket.getInputStream());
 			tcp_dos = new DataOutputStream(new BufferedOutputStream(tcp_socket.getOutputStream()));
@@ -55,34 +64,37 @@ public class FedStorage {
 				tcp_socket=null;
 				return;
 			}
-			new Thread(()->{
-				try {
-					while(true) {
-						Thread.sleep(1000);
-						tcp_dos.writeInt(-1);//NOP
-						tcp_dos.flush();
-						try {
-							EnderStorageManager storage = EnderStorageManager.instance(false);
-							ArrayList<AbstractEnderStorage> list=new ArrayList<>();
-							storage.storageList(list);
-							for(AbstractEnderStorage s:list) {
-								if(s instanceof EnderItemStorage) {
-									sync_item((EnderItemStorage)s);
-								}
-								if(s instanceof EnderLiquidStorage) {
-									sync_fluid((EnderLiquidStorage)s);
-								}
-							}
-						} catch (IOException e) {
-							e.printStackTrace();
-							Thread.sleep(1000);
-						}
+			Thread thread=new Thread(this::sync_loop,"FedStorage");
+			thread.start();
+			thread.join();
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+			try {
+				tcp_socket.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}
+	}
+	private void sync_loop() {
+		try {
+			while(true) {
+				Thread.sleep(1000);
+				tcp_dos.writeInt(-1);//NOP
+				tcp_dos.flush();
+				EnderStorageManager storage = EnderStorageManager.instance(false);
+				ArrayList<AbstractEnderStorage> list=new ArrayList<>();
+				storage.storageList(list);
+				for(AbstractEnderStorage s:list) {
+					if(s instanceof EnderItemStorage) {
+						sync_item((EnderItemStorage)s);
 					}
-				} catch (Exception e) {
-					e.printStackTrace();
+					if(s instanceof EnderLiquidStorage) {
+						sync_fluid((EnderLiquidStorage)s);
+					}
 				}
-			},"FedStorage").start();
-		} catch (IOException e) {
+			}
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -108,7 +120,9 @@ public class FedStorage {
 					copy=s.send_buffer.copy();
 				}
 			}
-			send_fluid(copy);
+			if(copy!=null&&copy.amount>0) {
+				send_fluid(copy);
+			}
 			synchronized(s) {
 				if(copy==null||copy.amount<=0) {
 					s.send_buffer=null;
@@ -224,7 +238,11 @@ public class FedStorage {
         	copy=(ArrayList<ItemStack>) send_buffer.clone();
         	send_buffer.clear();
     	}
-		reject_buffer.addAll(copy);
+    	if(!reject_buffer.isEmpty()) {
+    		copy.addAll(reject_buffer);
+    		reject_buffer.clear();
+    	}
+   		reject_buffer.addAll(copy);
     	//アイテム数
     	int item_count=0;
     	for(ItemStack stack : copy) {
