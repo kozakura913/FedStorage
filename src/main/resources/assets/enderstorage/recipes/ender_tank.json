@@ -25,7 +25,7 @@
 		},
 		"B": {
 			"type": "minecraft:item",
-			"item": "minecraft:blaze_rod",
+			"item": "minecraft:iron_ingot",
 			"data": 0
 		},
 		"W": {

@@ -1,12 +1,12 @@
 [
 	{
-		"modid": "enderstorage",
-		"name": "EnderStorage",
-		"description": "Stores your stuff in the END!",
+		"modid": "fedstorage",
+		"name": "FedStorage",
+		"description": "Stores your stuff in the Extra Server!",
 		"version": "${version}",
 		"mcversion": "${mc_version}",
-		"url": "http://www.minecraftforum.net/topic/909223",
-		"authorList": ["ChickenBones, covers1624"],
+		"url": "https://github.com/kozakura913/FedStorage",
+		"authorList": ["ChickenBones, covers1624","kozakura913"],
 		"dependencies": ["CodeChickenLib"]
 	}
 ]

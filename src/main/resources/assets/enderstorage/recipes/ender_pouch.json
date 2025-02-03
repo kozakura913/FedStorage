@@ -20,7 +20,7 @@
 		},
 		"B": {
 			"type": "minecraft:item",
-			"item": "minecraft:blaze_powder",
+			"item": "minecraft:iron_ingot",
 			"data": 0
 		},
 		"W": {

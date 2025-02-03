@@ -1,0 +1,53 @@
+package com.github.kozakura913.fedstorage.client.render.item;
+
+import java.util.List;
+
+import com.github.kozakura913.fedstorage.api.Frequency;
+import com.github.kozakura913.fedstorage.client.render.tile.RenderTileEnderChest;
+import codechicken.lib.render.item.IItemRenderer;
+import codechicken.lib.util.TransformUtils;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType;
+import net.minecraft.client.renderer.block.model.ItemOverrideList;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumFacing;
+import net.minecraftforge.common.model.IModelState;
+
+/**
+ * Created by covers1624 on 4/27/2016.
+ */
+public class EnderChestItemRender implements IItemRenderer {
+
+    @Override
+    public void renderItem(ItemStack item, TransformType transformType) {
+        GlStateManager.pushMatrix();
+
+        Frequency frequency = Frequency.readFromStack(item);
+        RenderTileEnderChest.renderChest(2, frequency, (byte)0, 0, 0, 0, 0, 0F);
+
+        //Fixes issues with inventory rendering.
+        //The Portal renderer modifies blend and disables it.
+        //Vanillas inventory relies on the fact that items don't modify gl so it never bothers to set it again.
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+        GlStateManager.popMatrix();
+    }
+
+    @Override
+    public IModelState getTransforms() {
+        return TransformUtils.DEFAULT_BLOCK;
+    }
+
+    @Override
+    public boolean isAmbientOcclusion() {
+        return false;
+    }
+
+    @Override
+    public boolean isGui3d() {
+        return false;
+    }
+}

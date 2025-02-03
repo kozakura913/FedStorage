@@ -32,10 +32,6 @@ repositories {
 		url = "http://dvs1.progwml6.com/files/maven"
 	}
     maven {
-        name = "mcmoddev"
-        url = "https://maven.mcmoddev.com"
-    }
-    maven {
         name = "CurseForge"
         url = "https://minecraft.curseforge.com/api/maven/"
     }
@@ -49,8 +45,8 @@ apply plugin: 'net.minecraftforge.gradle.forge'
 apply plugin: 'maven'
 
 
-group = "codechicken"
-archivesBaseName = "EnderStorage"
+group = "kozakura913"
+archivesBaseName = "FedStorage"
 
 sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 compileJava {
@@ -74,10 +70,6 @@ dependencies {
     compile files('libs/mcp-1.12.2-srg.zip')
     shade "com.github.MJaroslav.Reflectors:library:v4"
     compile "codechicken:CodeChickenLib:${config.mc_version}-${config.ccl_version}:deobf"
-	compile "mezz.jei:jei_${config.mc_version}:${config.jei_version}"
-    deobfCompile "mekanism:Mekanism:${config.mc_version}:${config.mekanism_version}"
-    deobfCompile "curse.maven:baubles-227083:2518667"
-    deobfCompile "curse.maven:botania-225643:3330934"
 
 }
 
@@ -115,14 +107,13 @@ jar {
     }
 
     manifest.attributes(
-            "Specification-Title": "enderstorage",
-            "Specification-Vendor": "codechicken",
+            "Specification-Title": "fedstorage",
+            "Specification-Vendor": "kozakura913",
             "Specification-Version": "1",
             "Implementation-Title": project.name,
             "Implementation-Version": "${version}",
-            "Implementation-Vendor" : "codechicken",
+            "Implementation-Vendor" : "kozakura913",
             "FMLAT": "es_at.cfg",
-            "FMLCorePlugin": "codechicken.enderstorage.reflection.ReflectorsPlugin",
             "FMLCorePluginContainsFMLMod": "true",
     )
 }
