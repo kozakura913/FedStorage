@@ -57,6 +57,13 @@ public class FedStorage {
 			try {
 				while(true) {
 					connect(host,port);
+					if(tcp_socket!=null) {
+						try {
+							tcp_socket.close();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
 					System.err.println("Connection Lost. Retry After 10s");
 					Thread.sleep(10*1000);
 				}
@@ -82,9 +89,9 @@ public class FedStorage {
 			Thread thread=new Thread(this::sync_loop,"FedStorage");
 			thread.start();
 			thread.join();
-		} catch (IOException | InterruptedException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
-			try {
+			if(tcp_socket!=null)try {
 				tcp_socket.close();
 			} catch (IOException e1) {
 				e1.printStackTrace();
