@@ -40,7 +40,7 @@ public class GuiEnderItemStorage extends GuiContainer {
     protected void drawGuiContainerForegroundLayer(int par1, int par2) {
         //fontRenderer.drawString(name, 8, 6, 0x404040);
         DecimalFormat df=new DecimalFormat("000");
-        fontRenderer.drawString("Sned."+df.format(chestInv.send_queue), 8, 6, 0x404040);
+        fontRenderer.drawString("Send."+df.format(chestInv.send_queue), 8, 6, 0x404040);
         fontRenderer.drawString("Recv."+df.format(chestInv.recv_queue), 62, 6, 0x404040);
         fontRenderer.drawString("Reject."+df.format(chestInv.recv_queue), 114, 6, 0x404040);
         fontRenderer.drawString(I18n.translateToLocal(playerInv.getName()), 8, ySize - 94, 0x404040);

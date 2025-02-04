@@ -35,6 +35,7 @@ public class ConfigurationHandler {
     public static int manaOutputRate;
     public static ItemStack personalItem;
     public static ItemStack enableAutoCollectItem;
+    public static String fedStorageServer;
 
     public static void init(File file) {
         if (!initialized) {
@@ -46,6 +47,7 @@ public class ConfigurationHandler {
     public static void loadConfig() {
         config.removeTag("disableVanilla");
         config.removeTag("disableVanillaRecipe");
+        fedStorageServer = config.getTag("fedStorageServer").setComment("FedStorageServer IP address and port https://github.com/kozakura913/FedStorageServer").getValue("127.0.0.1:3030");
         anarchyMode = config.getTag("anarchyMode").setComment("Causes chests to lose personal settings and drop the diamond on break").getBooleanValue(false);
 
         // Config tag for personalItem

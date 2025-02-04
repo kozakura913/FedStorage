@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 import com.github.kozakura913.fedstorage.api.AbstractEnderStorage;
+import com.github.kozakura913.fedstorage.handler.ConfigurationHandler;
 import com.github.kozakura913.fedstorage.manager.EnderStorageManager;
 import com.github.kozakura913.fedstorage.network.EnderStorageSPH;
 import com.github.kozakura913.fedstorage.storage.EnderItemStorage;
@@ -39,10 +40,23 @@ public class FedStorage {
 		INSTANCE=new FedStorage();
 	}
 	private FedStorage(){
+		int index=ConfigurationHandler.fedStorageServer.lastIndexOf(':');
+		String host0=ConfigurationHandler.fedStorageServer;
+		int port0=3030;
+		if(index>0) {
+			try{
+				port0=Integer.parseInt(ConfigurationHandler.fedStorageServer.substring(index+1));
+				host0=ConfigurationHandler.fedStorageServer.substring(0,index);
+			}catch(Exception e) {
+				
+			}
+		}
+		String host=host0;
+		int port=port0;
 		new Thread(()->{
 			try {
 				while(true) {
-					connect("127.0.0.1",3030);
+					connect(host,port);
 					System.err.println("Connection Lost. Retry After 10s");
 					Thread.sleep(10*1000);
 				}
