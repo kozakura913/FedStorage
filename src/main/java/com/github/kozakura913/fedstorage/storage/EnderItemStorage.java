@@ -46,147 +46,148 @@ import java.util.Arrays;
 
 public class EnderItemStorage extends AbstractEnderStorage implements IInventory {
 
-    private ItemStack[] items;
-    private int open;
-    private int size;
+	private ItemStack[] items;
+	private int open;
+	private int size;
 	public ArrayList<ItemStack> recv_buffer=new ArrayList<>();//インベントリ行きサーバー内
 	public ArrayList<ItemStack> send_buffer=new ArrayList<>();//転送待ちサーバー内
+	public int lastServerRejects,recv_queue,send_queue;
 
-    public EnderItemStorage(EnderStorageManager manager, Frequency freq) {
-        super(manager, freq);
-        size = configSize;
-        empty();
-    }
+	public EnderItemStorage(EnderStorageManager manager, Frequency freq) {
+		super(manager, freq);
+		size = configSize;
+		empty();
+	}
 
-    @Override
-    public void setStack(ItemStack stack) {
+	@Override
+	public void setStack(ItemStack stack) {
 
-    }
+	}
 
-    public EnderItemStorage(EnderStorageManager manager, ItemStack stack) {
-        super(manager, getFreq(stack));
-        size = configSize;
-        empty();
-    }
+	public EnderItemStorage(EnderStorageManager manager, ItemStack stack) {
+		super(manager, getFreq(stack));
+		size = configSize;
+		empty();
+	}
 
-    @Override
-    public void clearStorage() {
-        synchronized (this) {
-            empty();
-            setDirty();
-        }
-    }
+	@Override
+	public void clearStorage() {
+		synchronized (this) {
+			empty();
+			setDirty();
+		}
+	}
 
-    private void alignSize() {
-        if (configSize > size) {
-            ItemStack[] newItems = new ItemStack[sizes[configSize]];
-            ArrayUtils.fillArray(newItems, ItemStack.EMPTY);
-            System.arraycopy(items, 0, newItems, 0, items.length);
-            items = newItems;
-            size = configSize;
-            markDirty();
-        } else {
-            int numStacks = 0;
-            for (ItemStack item : items) {
-                if (!item.isEmpty()) {
-                    numStacks++;
-                }
-            }
+	private void alignSize() {
+		if (configSize > size) {
+			ItemStack[] newItems = new ItemStack[sizes[configSize]];
+			ArrayUtils.fillArray(newItems, ItemStack.EMPTY);
+			System.arraycopy(items, 0, newItems, 0, items.length);
+			items = newItems;
+			size = configSize;
+			markDirty();
+		} else {
+			int numStacks = 0;
+			for (ItemStack item : items) {
+				if (!item.isEmpty()) {
+					numStacks++;
+				}
+			}
 
-            if (numStacks <= sizes[configSize]) {
-                ItemStack[] newItems = new ItemStack[sizes[configSize]];
-                ArrayUtils.fillArray(newItems, ItemStack.EMPTY);
-                int copyTo = 0;
-                for (ItemStack item : items) {
-                    if (!item.isEmpty()) {
-                        newItems[copyTo] = item;
-                        copyTo++;
-                    }
-                }
-                items = newItems;
-                size = configSize;
-                markDirty();
-            }
-        }
-    }
+			if (numStacks <= sizes[configSize]) {
+				ItemStack[] newItems = new ItemStack[sizes[configSize]];
+				ArrayUtils.fillArray(newItems, ItemStack.EMPTY);
+				int copyTo = 0;
+				for (ItemStack item : items) {
+					if (!item.isEmpty()) {
+						newItems[copyTo] = item;
+						copyTo++;
+					}
+				}
+				items = newItems;
+				size = configSize;
+				markDirty();
+			}
+		}
+	}
 
-    @Override
-    public String type() {
-        return "item";
-    }
+	@Override
+	public String type() {
+		return "item";
+	}
 
-    public void loadFromTag(NBTTagCompound tag) {
-        size = tag.getByte("size");
-        empty();
-        InventoryUtils.readItemStacksFromTag(items, tag.getTagList("Items", 10));
-        isPull=tag.getBoolean("isPull");
-        NBTTagList tagList ;
-        ItemStack[] list;
-        tagList = tag.getTagList("Recv", 10);
-        list = new ItemStack[tagList.tagCount()];
-        InventoryUtils.readItemStacksFromTag(list, tagList);
-        recv_buffer.addAll(Arrays.asList(list));
-        tagList = tag.getTagList("Send", 10);
-        list = new ItemStack[tagList.tagCount()];
-        InventoryUtils.readItemStacksFromTag(list, tagList);
-        send_buffer.addAll(Arrays.asList(list));
-        if (size != configSize) {
-            alignSize();
-        }
-    }
-    public NBTTagCompound saveToTag() {
-        if (size != configSize && open == 0) {
-            alignSize();
-        }
+	public void loadFromTag(NBTTagCompound tag) {
+		size = tag.getByte("size");
+		empty();
+		InventoryUtils.readItemStacksFromTag(items, tag.getTagList("Items", 10));
+		isPull=tag.getBoolean("isPull");
+		NBTTagList tagList ;
+		ItemStack[] list;
+		tagList = tag.getTagList("Recv", 10);
+		list = new ItemStack[tagList.tagCount()];
+		InventoryUtils.readItemStacksFromTag(list, tagList);
+		recv_buffer.addAll(Arrays.asList(list));
+		tagList = tag.getTagList("Send", 10);
+		list = new ItemStack[tagList.tagCount()];
+		InventoryUtils.readItemStacksFromTag(list, tagList);
+		send_buffer.addAll(Arrays.asList(list));
+		if (size != configSize) {
+			alignSize();
+		}
+	}
+	public NBTTagCompound saveToTag() {
+		if (size != configSize && open == 0) {
+			alignSize();
+		}
 
-        NBTTagCompound compound = new NBTTagCompound();
-        compound.setTag("Items", InventoryUtils.writeItemStacksToTag(items));
-        compound.setByte("size", (byte) size);
-        compound.setBoolean("isPull", isPull);
-        synchronized(recv_buffer) {
-	        ItemStack[] arr=new ItemStack[recv_buffer.size()];
-	        recv_buffer.toArray(arr);
-	        compound.setTag("Recv", InventoryUtils.writeItemStacksToTag(arr));
-        }
-        synchronized(send_buffer) {
-	        ItemStack[] arr=new ItemStack[send_buffer.size()];
-	        send_buffer.toArray(arr);
-	        compound.setTag("Send", InventoryUtils.writeItemStacksToTag(arr));
-        }
+		NBTTagCompound compound = new NBTTagCompound();
+		compound.setTag("Items", InventoryUtils.writeItemStacksToTag(items));
+		compound.setByte("size", (byte) size);
+		compound.setBoolean("isPull", isPull);
+		synchronized(recv_buffer) {
+			ItemStack[] arr=new ItemStack[recv_buffer.size()];
+			recv_buffer.toArray(arr);
+			compound.setTag("Recv", InventoryUtils.writeItemStacksToTag(arr));
+		}
+		synchronized(send_buffer) {
+			ItemStack[] arr=new ItemStack[send_buffer.size()];
+			send_buffer.toArray(arr);
+			compound.setTag("Send", InventoryUtils.writeItemStacksToTag(arr));
+		}
 
-        return compound;
-    }
+		return compound;
+	}
 
-    public ItemStack getStackInSlot(int slot) {
-        synchronized (this) {
-            return items[slot];
-        }
-    }
+	public ItemStack getStackInSlot(int slot) {
+		synchronized (this) {
+			return items[slot];
+		}
+	}
 
-    public ItemStack[] getInventory() {
-        synchronized (this) {
-            return items;
-        }
-    }
+	public ItemStack[] getInventory() {
+		synchronized (this) {
+			return items;
+		}
+	}
 
-    public ItemStack removeStackFromSlot(int slot) {
-        synchronized (this) {
-            return InventoryUtils.removeStackFromSlot(this, slot);
-        }
-    }
+	public ItemStack removeStackFromSlot(int slot) {
+		synchronized (this) {
+			return InventoryUtils.removeStackFromSlot(this, slot);
+		}
+	}
 
-    public void setInventorySlotContents(int slot, ItemStack stack) {
-        synchronized (this) {
-        	if(this.isPull) {
-                items[slot] = stack;
-        	}else if(!super.manager.client) {
-	            synchronized (send_buffer) {
-	            	send_buffer.add(stack);
-	            }
-        	}
-            markDirty();
-        }
-    }
+	public void setInventorySlotContents(int slot, ItemStack stack) {
+		synchronized (this) {
+			if(this.isPull||lastServerRejects>1) {
+				items[slot] = stack;
+			}else if(!super.manager.client) {
+				synchronized (send_buffer) {
+					send_buffer.add(stack);
+				}
+			}
+			markDirty();
+		}
+	}
 
     public void openInventory() {
         if (manager.client) {
@@ -263,6 +264,10 @@ public class EnderItemStorage extends AbstractEnderStorage implements IInventory
             freq.writeToPacket(packet);
             packet.writeString(name);
             packet.writeByte(size);
+            this.send_queue=send_buffer.size();
+            this.recv_queue=recv_buffer.size();
+            packet.writeInt(this.send_queue);
+            packet.writeInt(this.recv_queue);
 
             packet.sendToPlayer(player1);
         });
@@ -283,8 +288,11 @@ public class EnderItemStorage extends AbstractEnderStorage implements IInventory
     }
 
     @SideOnly (Side.CLIENT)
-    public void openClientGui(int windowID, InventoryPlayer playerInv, String name, int size) {
-        this.size = size;
+    public void openClientGui(int windowID, InventoryPlayer playerInv, PacketCustom packet) {
+		String name=packet.readString();
+		this.size=packet.readUByte();
+		this.send_queue=packet.readInt();
+		this.recv_queue=packet.readInt();
         empty();
         ClientUtils.openSMPGui(windowID, new GuiEnderItemStorage(playerInv, this, name));
     }

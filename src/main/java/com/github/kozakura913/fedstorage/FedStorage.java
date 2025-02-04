@@ -11,6 +11,7 @@ import java.util.ArrayList;
 
 import com.github.kozakura913.fedstorage.api.AbstractEnderStorage;
 import com.github.kozakura913.fedstorage.manager.EnderStorageManager;
+import com.github.kozakura913.fedstorage.network.EnderStorageSPH;
 import com.github.kozakura913.fedstorage.storage.EnderItemStorage;
 import com.github.kozakura913.fedstorage.storage.EnderLiquidStorage;
 
@@ -25,7 +26,7 @@ import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
 
 public class FedStorage {
-    private Socket tcp_socket;
+	private Socket tcp_socket;
 	private DataInputStream tcp_dis;
 	private DataOutputStream tcp_dos;
 	private ArrayList<ItemStack> reject_buffer=new ArrayList<>();//転送拒否サーバー内
@@ -103,7 +104,19 @@ public class FedStorage {
 		tcp_dos.writeInt(1);//command
 		tcp_dos.writeUTF(id);
 		tcp_dos.flush();
-		send_item(s.send_buffer);
+		try{
+			s.lastServerRejects=s.send_buffer.size();
+			s.lastServerRejects=send_item(s.send_buffer);
+			EnderStorageSPH.sendItemServerRejects(null,s.freq,s.lastServerRejects);
+		}finally {
+			//何らかの理由で拒絶された場合にローカル待機列に戻す
+			if(!reject_buffer.isEmpty()) {
+				synchronized(s.send_buffer){
+					s.send_buffer.addAll(reject_buffer);
+				}
+				reject_buffer.clear();
+			}
+		}
 		if(s.isPull) {
 			recv_item(s.recv_buffer);
 		}
@@ -231,17 +244,14 @@ public class FedStorage {
 			recv_queue.clear();
 		}
 	}
-	private synchronized void send_item(ArrayList<ItemStack> send_buffer) throws IOException {
+	private synchronized int send_item(ArrayList<ItemStack> send_buffer) throws IOException {
 		ArrayList<ItemStack> copy;
 		synchronized(send_buffer){
-			if(send_buffer.isEmpty())return;
+			if(send_buffer.isEmpty())return 0;
 			copy=(ArrayList<ItemStack>) send_buffer.clone();
 			send_buffer.clear();
 		}
-		if(!reject_buffer.isEmpty()) {
-			copy.addAll(reject_buffer);
-			reject_buffer.clear();
-		}
+		//通信が成功する前はすべて失敗した事にする
 		reject_buffer.addAll(copy);
 		//アイテム数
 		int item_count=0;
@@ -250,7 +260,6 @@ public class FedStorage {
 			Item item = stack.getItem();
 			if(item==Items.AIR||item==null)continue;
 			item_count++;
-			System.out.println(item);
 		}
 		tcp_dos.writeByte(2);//command
 		tcp_dos.writeInt(item_count);
@@ -268,23 +277,28 @@ public class FedStorage {
 		}
 		tcp_dos.flush();
 		int packet_length=tcp_dis.readInt();
-		if(packet_length<=0)return;
+		if(packet_length<=0)return 0;
 		byte[] bb=new byte[packet_length];
 		tcp_dis.readFully(bb);
 		ByteArrayInputStream bis = new ByteArrayInputStream(bb);
 		DataInputStream dis = new DataInputStream(bis);
 		int reject_count=dis.readInt();
-		reject_buffer.clear();
+		int[] reject_index=null;
 		if(reject_count>0) {
+			reject_index=new int[reject_count];
 			for(int i=0;i<reject_count;i++) {
-				int index=dis.readInt();
+				reject_index[i]=dis.readInt();
+			}
+		}
+		//通信が無事に終了した
+		reject_buffer.clear();
+		if(reject_index!=null) {
+			//拒絶されたアイテムがある場合拒絶リストを更新
+			for(int index:reject_index) {
 				reject_buffer.add(copy.get(index));
 			}
 		}
-		if(reject_buffer.isEmpty())return;
-		synchronized(send_buffer){
-			send_buffer.addAll(reject_buffer);
-		}
+		return reject_count;
 	}
 	private NBTTagCompound readNBT(DataInputStream dis) throws IOException {
 		//NBTサイズ

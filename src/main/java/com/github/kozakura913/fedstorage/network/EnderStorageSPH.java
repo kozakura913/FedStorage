@@ -9,7 +9,7 @@ import net.minecraft.network.play.INetHandlerPlayServer;
 
 public class EnderStorageSPH implements IServerPacketHandler {
 
-    public static final String channel = "ES";
+    public static final String channel = "FedS";
 
     @Override
     public void handlePacket(PacketCustom packet, EntityPlayerMP sender, INetHandlerPlayServer handler) {
@@ -25,6 +25,14 @@ public class EnderStorageSPH implements IServerPacketHandler {
         //packet.writeString(owner);
         freq.writeToPacket(packet);
         packet.writeBoolean(open);
+
+        packet.sendToPlayer(player);
+    }
+    public static void sendItemServerRejects(EntityPlayer player, Frequency freq, int lastServerRejects) {
+        PacketCustom packet = new PacketCustom(channel, 10);
+        //packet.writeString(owner);
+        freq.writeToPacket(packet);
+        packet.writeInt(lastServerRejects);
 
         packet.sendToPlayer(player);
     }

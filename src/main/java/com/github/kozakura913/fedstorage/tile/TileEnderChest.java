@@ -36,145 +36,158 @@ import static net.minecraft.init.SoundEvents.*;
 
 public class TileEnderChest extends TileFrequencyOwner {
 
-    public double a_lidAngle;
-    public double b_lidAngle;
-    public int c_numOpen;
-    public int rotation;
+	public double a_lidAngle;
+	public double b_lidAngle;
+	public int c_numOpen;
+	public int rotation;
 
-    public static EnderDyeButton[] buttons;
+	public static EnderDyeButton[] buttons;
 
-    static {
-        buttons = new EnderDyeButton[3];
-        for (int i = 0; i < 3; i++) {
-            buttons[i] = new EnderDyeButton(i);
-        }
-    }
+	static {
+		buttons = new EnderDyeButton[3];
+		for (int i = 0; i < 3; i++) {
+			buttons[i] = new EnderDyeButton(i);
+		}
+	}
 
-    public TileEnderChest() {
-    }
+	public TileEnderChest() {
+	}
 
-    @Override
-    public void update() {
-        super.update();
-        if(!world.isRemote && getStorage().isPull) {
-        	ArrayList<ItemStack> recv_buffer = getStorage().recv_buffer;
-        	synchronized(recv_buffer) {
-        		while(!recv_buffer.isEmpty()) {
-            		int insertCount=0;
-        			ItemStack stack=recv_buffer.get(0);
-                    IItemHandler inventory = getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, EnumFacing.UP);
-                    for(int i = 0; i < inventory.getSlots();i++) {
-                        ItemStack left = inventory.insertItem(i, stack, true);
-                        if(left.getCount() > 0) {
-                            int toInsert = stack.getCount() - left.getCount();
-                            stack.shrink(toInsert);
-                            ItemStack insertStack = stack.copy();
-                            insertStack.setCount(toInsert);
-                            inventory.insertItem(i, insertStack, false);
-                            getStorage().markDirty();
-                            if(toInsert>0) {
-                            	insertCount+=toInsert;
-                            }
-                        } else {
-                            inventory.insertItem(i, stack.copy(), false);
-                            recv_buffer.remove(0);
-                        	insertCount+=stack.getCount();
-                            getStorage().markDirty();
-                            break;
-                        }
-                    }
-                    if(insertCount<1)break;
-        		}
-        	}
-            pushItems();
-        }
-        if (!world.isRemote && (world.getTotalWorldTime() % 20 == 0 || c_numOpen != getStorage().getNumOpen())) {
-            c_numOpen = getStorage().getNumOpen();
-            world.addBlockEvent(getPos(), getBlockType(), 1, c_numOpen);
-            world.notifyNeighborsOfStateChange(pos, getBlockType(), true);
-        }
+	@Override
+	public void update() {
+		super.update();
+		if(!world.isRemote && getStorage().isPull) {
+			ArrayList<ItemStack> recv_buffer = getStorage().recv_buffer;
+			synchronized(recv_buffer) {
+				while(!recv_buffer.isEmpty()) {
+					int insertCount=0;
+					ItemStack stack=recv_buffer.get(0);
+					IItemHandler inventory = getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, EnumFacing.UP);
+					for(int i = 0; i < inventory.getSlots();i++) {
+						ItemStack left = inventory.insertItem(i, stack, true);
+						if(left.getCount() > 0) {
+							int toInsert = stack.getCount() - left.getCount();
+							stack.shrink(toInsert);
+							ItemStack insertStack = stack.copy();
+							insertStack.setCount(toInsert);
+							inventory.insertItem(i, insertStack, false);
+							getStorage().markDirty();
+							if(toInsert>0) {
+								insertCount+=toInsert;
+							}
+						} else {
+							inventory.insertItem(i, stack.copy(), false);
+							recv_buffer.remove(0);
+							insertCount+=stack.getCount();
+							getStorage().markDirty();
+							break;
+						}
+					}
+					if(insertCount<1)break;
+				}
+			}
+			pushItems();
+		}else if(!world.isRemote&&world.getTotalWorldTime() % 20 == 0) {
+			ArrayList<ItemStack> send_buffer = getStorage().send_buffer;
+			synchronized(send_buffer) {
+				if(send_buffer.isEmpty()) {
+					IItemHandler inventory = getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, EnumFacing.DOWN);
+					for(int i = 0; i < inventory.getSlots();i++) {
+						ItemStack is = inventory.extractItem(i,64,false);
+						if(is!=null&&is.getCount()>0) {
+							send_buffer.add(is);
+						}
+					}
+				}
+			}
+		}
+		if (!world.isRemote && (world.getTotalWorldTime() % 20 == 0 || c_numOpen != getStorage().getNumOpen())) {
+			c_numOpen = getStorage().getNumOpen();
+			world.addBlockEvent(getPos(), getBlockType(), 1, c_numOpen);
+			world.notifyNeighborsOfStateChange(pos, getBlockType(), true);
+		}
 
-        b_lidAngle = a_lidAngle;
-        a_lidAngle = MathHelper.approachLinear(a_lidAngle, c_numOpen > 0 ? 1 : 0, 0.1);
+		b_lidAngle = a_lidAngle;
+		a_lidAngle = MathHelper.approachLinear(a_lidAngle, c_numOpen > 0 ? 1 : 0, 0.1);
 
-        if (b_lidAngle >= 0.5 && a_lidAngle < 0.5) {
-            world.playSound(null, getPos(), useVanillaEnderChestSounds ? BLOCK_ENDERCHEST_CLOSE : BLOCK_CHEST_CLOSE, SoundCategory.BLOCKS, 0.5F, world.rand.nextFloat() * 0.1F + 0.9F);
-        } else if (b_lidAngle == 0 && a_lidAngle > 0) {
-            world.playSound(null, getPos(), useVanillaEnderChestSounds ? BLOCK_ENDERCHEST_OPEN : BLOCK_CHEST_OPEN, SoundCategory.BLOCKS, 0.5F, world.rand.nextFloat() * 0.1F + 0.9F);
-        }
-    }
+		if (b_lidAngle >= 0.5 && a_lidAngle < 0.5) {
+			world.playSound(null, getPos(), useVanillaEnderChestSounds ? BLOCK_ENDERCHEST_CLOSE : BLOCK_CHEST_CLOSE, SoundCategory.BLOCKS, 0.5F, world.rand.nextFloat() * 0.1F + 0.9F);
+		} else if (b_lidAngle == 0 && a_lidAngle > 0) {
+			world.playSound(null, getPos(), useVanillaEnderChestSounds ? BLOCK_ENDERCHEST_OPEN : BLOCK_CHEST_OPEN, SoundCategory.BLOCKS, 0.5F, world.rand.nextFloat() * 0.1F + 0.9F);
+		}
+	}
 
-    private List<EnumFacing> emptySides = new ArrayList<>();
-    private void pushItems() {
-        emptySides.clear();
-        for(ItemStack stack: getStorage().getInventory()) {
-            if(stack.isEmpty()) continue;
-            for (EnumFacing side: EnumFacing.VALUES) {
-                if(emptySides.contains(side)) continue;
-                TileEntity te = world.getTileEntity(getPos().offset(side));
-                if(te == null) {
-                    emptySides.add(side);
-                    continue;
-                }
-                IItemHandler inventory = te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, side.getOpposite());
-                if(inventory == null) {
-                    emptySides.add(side);
-                    continue;
-                }
+	private List<EnumFacing> emptySides = new ArrayList<>();
+	private void pushItems() {
+		emptySides.clear();
+		for(ItemStack stack: getStorage().getInventory()) {
+			if(stack.isEmpty()) continue;
+			for (EnumFacing side: EnumFacing.VALUES) {
+				if(emptySides.contains(side)) continue;
+				TileEntity te = world.getTileEntity(getPos().offset(side));
+				if(te == null) {
+					emptySides.add(side);
+					continue;
+				}
+				IItemHandler inventory = te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, side.getOpposite());
+				if(inventory == null) {
+					emptySides.add(side);
+					continue;
+				}
 
-                for(int i = 0; i < inventory.getSlots();i++) {
-                    ItemStack left = inventory.insertItem(i, stack, true);
-                    if(left.getCount() > 0) {
-                        int toInsert = stack.getCount() - left.getCount();
-                        stack.shrink(toInsert);
-                        ItemStack insertStack = stack.copy();
-                        insertStack.setCount(toInsert);
-                        inventory.insertItem(i, insertStack, false);
-                        getStorage().markDirty();
-                    } else {
-                        inventory.insertItem(i, stack.copy(), false);
-                        stack.setCount(0);
-                        getStorage().markDirty();
-                    }
-                }
-            }
-        }
-    }
+				for(int i = 0; i < inventory.getSlots();i++) {
+					ItemStack left = inventory.insertItem(i, stack, true);
+					if(left.getCount() > 0) {
+						int toInsert = stack.getCount() - left.getCount();
+						stack.shrink(toInsert);
+						ItemStack insertStack = stack.copy();
+						insertStack.setCount(toInsert);
+						inventory.insertItem(i, insertStack, false);
+						getStorage().markDirty();
+					} else {
+						inventory.insertItem(i, stack.copy(), false);
+						stack.setCount(0);
+						getStorage().markDirty();
+					}
+				}
+			}
+		}
+	}
 
-    @Override
-    public boolean receiveClientEvent(int id, int type) {
-        if (id == 1) {
-            c_numOpen = type;
-            return true;
-        }
-        return false;
-    }
+	@Override
+	public boolean receiveClientEvent(int id, int type) {
+		if (id == 1) {
+			c_numOpen = type;
+			return true;
+		}
+		return false;
+	}
 
-    public double getRadianLidAngle(float frame) {
-        double a = MathHelper.interpolate(b_lidAngle, a_lidAngle, frame);
-        a = 1.0F - a;
-        a = 1.0F - a * a * a;
-        return a * 3.141593 * -0.5;
-    }
+	public double getRadianLidAngle(float frame) {
+		double a = MathHelper.interpolate(b_lidAngle, a_lidAngle, frame);
+		a = 1.0F - a;
+		a = 1.0F - a * a * a;
+		return a * 3.141593 * -0.5;
+	}
 
-    @Override
-    public EnderItemStorage getStorage() {
-        return (EnderItemStorage) EnderStorageManager.instance(world.isRemote).getStorage(frequency, "item");
-    }
+	@Override
+	public EnderItemStorage getStorage() {
+		return (EnderItemStorage) EnderStorageManager.instance(world.isRemote).getStorage(frequency, "item");
+	}
 
-    @Override
-    public void writeToPacket(MCDataOutput packet) {
-        super.writeToPacket(packet);
-        packet.writeByte(rotation);
-        packet.writeBoolean(getStorage().isPull);
-    }
+	@Override
+	public void writeToPacket(MCDataOutput packet) {
+		super.writeToPacket(packet);
+		packet.writeByte(rotation);
+		packet.writeBoolean(getStorage().isPull);
+	}
 
-    @Override
-    public void readFromPacket(MCDataInput packet) {
-        super.readFromPacket(packet);
-        rotation = packet.readUByte() & 3;
-        getStorage().isPull=packet.readBoolean();
-    }
+	@Override
+	public void readFromPacket(MCDataInput packet) {
+		super.readFromPacket(packet);
+		rotation = packet.readUByte() & 3;
+		getStorage().isPull=packet.readBoolean();
+	}
 
     @Override
     public void onPlaced(EntityLivingBase entity) {
