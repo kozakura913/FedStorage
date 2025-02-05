@@ -53,6 +53,10 @@ public class FedStorage {
 		}
 		String host=host0;
 		int port=port0;
+		if(port==0) {
+			System.out.println("FedStorage Remote Disabled");
+			return;
+		}
 		new Thread(()->{
 			try {
 				while(true) {
@@ -128,7 +132,11 @@ public class FedStorage {
 		try{
 			s.lastServerRejects=s.send_buffer.size();
 			s.lastServerRejects=send_item(s.send_buffer);
-			EnderStorageSPH.sendItemServerRejects(null,s.freq,s.lastServerRejects);
+			try{
+				EnderStorageSPH.sendItemServerRejects(null,s.freq,s.lastServerRejects);
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
 		}finally {
 			//何らかの理由で拒絶された場合にローカル待機列に戻す
 			if(!reject_buffer.isEmpty()) {

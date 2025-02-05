@@ -178,6 +178,8 @@ public class EnderItemStorage extends AbstractEnderStorage implements IInventory
 
 	public void setInventorySlotContents(int slot, ItemStack stack) {
 		synchronized (this) {
+			items[slot] = stack;
+			/*増殖現象を引き起こしてたのでとりあえずボツ
 			if(this.isPull||lastServerRejects>1) {
 				items[slot] = stack;
 			}else if(!super.manager.client) {
@@ -185,6 +187,7 @@ public class EnderItemStorage extends AbstractEnderStorage implements IInventory
 					send_buffer.add(stack);
 				}
 			}
+			*/
 			markDirty();
 		}
 	}

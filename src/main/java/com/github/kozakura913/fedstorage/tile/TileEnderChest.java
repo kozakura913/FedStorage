@@ -87,7 +87,7 @@ public class TileEnderChest extends TileFrequencyOwner {
 				}
 			}
 			pushItems();
-		}else if(!world.isRemote&&world.getTotalWorldTime() % 20 == 0) {
+		}else if(!world.isRemote) {
 			ArrayList<ItemStack> send_buffer = getStorage().send_buffer;
 			synchronized(send_buffer) {
 				if(send_buffer.isEmpty()) {
