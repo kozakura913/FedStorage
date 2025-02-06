@@ -34,7 +34,7 @@ public class FedStorage {
 	private ArrayList<ItemStack> recv_queue=new ArrayList<>();//転送処理バッファ
 	private static int RECV_BUFFER_LIMIT=10;
 	private static FedStorage INSTANCE=null;
-	private static long VERSION=3;
+	private static long VERSION=4;
 	public static synchronized void init() {
 		if(INSTANCE!=null)return;
 		INSTANCE=new FedStorage();
@@ -201,7 +201,7 @@ public class FedStorage {
 		if(fluid_name==null)return;
 		tcp_dos.writeInt(4);//command
 		tcp_dos.writeUTF(fluid_name);
-		tcp_dos.writeInt(send_buffer.amount);
+		tcp_dos.writeLong(send_buffer.amount);
 		writeNBT(send_buffer.tag,tcp_dos);
 		tcp_dos.flush();
 		send_buffer.amount=0;
@@ -217,7 +217,7 @@ public class FedStorage {
 		if(available<=0)return recv_buffer;
 		tcp_dos.writeInt(5);//command
 		tcp_dos.writeUTF(fluid_name);
-		tcp_dos.writeInt(available);
+		tcp_dos.writeLong(available);
 		if(recv_buffer!=null) {
 			writeNBT(recv_buffer.tag,tcp_dos);
 		}else {
