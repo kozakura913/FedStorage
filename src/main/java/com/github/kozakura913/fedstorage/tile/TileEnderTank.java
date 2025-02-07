@@ -146,47 +146,63 @@ public class TileEnderTank extends TileFrequencyOwner {
     public TankFluidCap fluidCap = new TankFluidCap();
 
 
-    private boolean described;
+	private boolean described;
 
-    @Override
-    public void update() {
-        super.update();
+	@Override
+	public void update() {
+		super.update();
 
-        pressure_state.update(world.isRemote);
-        if(!world.isRemote) {
-        	if(getStorage().isPull) {
-        		synchronized(getStorage()) {
-            		FluidStack recv_buffer = getStorage().recv_buffer;
-            		if(recv_buffer!=null) {
-            			int count=getStorage().fill(recv_buffer,true);
-            			recv_buffer.amount-=count;
-            			if(recv_buffer.amount<1) {
-            				getStorage().recv_buffer=null;
-            			}
-            		}
-        		}
-        	}else {
-        		synchronized(getStorage()) {
-           			if(getStorage().send_buffer==null) {
-               			FluidStack fs = getStorage().drain(Integer.MAX_VALUE,true);
-               			if(fs!=null) {
-               				getStorage().send_buffer=fs;
-               			}
-           			}else {
-               			FluidStack fs = getStorage().drain(getStorage().send_buffer,true);
-               			if(fs!=null) {
-               				getStorage().send_buffer.amount+=fs.amount;
-               			}
-           			}
-    			}
-        	}
-        }
-        if (pressure_state.a_pressure) {
-            ejectLiquid();
-        }
-        liquid_state.setFrequency(frequency);
-        liquid_state.update(world.isRemote, world.getWorldTime() % 20 == 0);
-    }
+		pressure_state.update(world.isRemote);
+		if(!world.isRemote) {
+			if(getStorage().isPull) {
+				synchronized(getStorage()) {
+					FluidStack send_buffer = getStorage().send_buffer;
+					if(send_buffer!=null) {
+						int count=getStorage().fill(send_buffer,true);
+						send_buffer.amount-=count;
+						if(send_buffer.amount<1) {
+							getStorage().send_buffer=null;
+						}
+					}
+					FluidStack recv_buffer = getStorage().recv_buffer;
+					if(recv_buffer!=null) {
+						int count=getStorage().fill(recv_buffer,true);
+						recv_buffer.amount-=count;
+						if(recv_buffer.amount<1) {
+							getStorage().recv_buffer=null;
+						}
+					}
+				}
+			}else {
+				synchronized(getStorage()) {
+					FluidStack recv_buffer = getStorage().recv_buffer;
+					if(recv_buffer!=null) {
+						int count=getStorage().fill(recv_buffer,true);
+						recv_buffer.amount-=count;
+						if(recv_buffer.amount<1) {
+							getStorage().recv_buffer=null;
+						}
+					}
+					if(getStorage().send_buffer==null) {
+						FluidStack fs = getStorage().drain(Integer.MAX_VALUE,true);
+						if(fs!=null) {
+							getStorage().send_buffer=fs;
+						}
+					}else {
+						FluidStack fs = getStorage().drain(getStorage().send_buffer,true);
+						if(fs!=null) {
+							getStorage().send_buffer.amount+=fs.amount;
+						}
+					}
+				}
+			}
+		}
+		if (pressure_state.a_pressure) {
+			ejectLiquid();
+		}
+		liquid_state.setFrequency(frequency);
+		liquid_state.update(world.isRemote, world.getWorldTime() % 20 == 0);
+	}
 
     private void ejectLiquid() {
         for (EnumFacing side : EnumFacing.values()) {
