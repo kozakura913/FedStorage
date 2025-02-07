@@ -212,7 +212,7 @@ public class FedStorage {
 		if(recv_buffer!=null) {
 			available=Integer.MAX_VALUE-recv_buffer.amount;
 			fluid_name=recv_buffer.getFluid().getName();
-			if(fluid_name==null)fluid_name="";
+			if(fluid_name==null||recv_buffer.amount==0)fluid_name="";
 		}
 		if(available<=0)return recv_buffer;
 		tcp_dos.writeInt(5);//command
@@ -231,17 +231,15 @@ public class FedStorage {
 		ByteArrayInputStream pack_bis = new ByteArrayInputStream(bb);
 		DataInputStream pack_dis = new DataInputStream(pack_bis);
 		String name=pack_dis.readUTF();
-		int amount=pack_dis.readInt();
+		long amount=pack_dis.readLong();
 		//NBTは必ず存在するわけではない
 		NBTTagCompound nbt=readNBT(pack_dis);
 		if(fluid_name.isEmpty()&&name!=null&&!name.isEmpty()) {
 			fluid_name=name;
-			if(recv_buffer==null) {
-				Fluid f=FluidRegistry.getFluid(fluid_name);
-				recv_buffer=new FluidStack(f, amount,nbt);
-			}
+			Fluid f=FluidRegistry.getFluid(fluid_name);
+			recv_buffer=new FluidStack(f, (int)amount,nbt);
 		}
-		recv_buffer.amount=amount;
+		recv_buffer.amount=(int)amount;
 		return recv_buffer;
 	}
 	private synchronized void recv_item(ArrayList<ItemStack> recv_buffer) throws IOException {
