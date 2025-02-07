@@ -105,7 +105,7 @@ public class FedStorage {
 	private void sync_loop() {
 		try {
 			while(true) {
-				Thread.sleep(1000);
+				Thread.sleep(100);
 				tcp_dos.writeInt(-1);//NOP
 				tcp_dos.flush();
 				EnderStorageManager storage = EnderStorageManager.instance(false);
