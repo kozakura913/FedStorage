@@ -79,6 +79,7 @@ public class EnderEnergyStorage extends AbstractEnderStorage implements net.mine
 	public NBTTagCompound saveToTag() {
 		NBTTagCompound nbt=new NBTTagCompound();
 		nbt.setInteger("energy", energy);
+		nbt.setLong("local_buffer", local_buffer);
 		nbt.setBoolean("isPull", isPull);
 		return nbt;
 	}
@@ -86,6 +87,7 @@ public class EnderEnergyStorage extends AbstractEnderStorage implements net.mine
 	@Override
 	public void loadFromTag(NBTTagCompound tag) {
 		energy=tag.getInteger("energy");
+		local_buffer=tag.getLong("local_buffer");
 		isPull=tag.getBoolean("isPull");
 	}
 
