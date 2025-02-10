@@ -4,6 +4,8 @@ import com.github.kozakura913.fedstorage.api.Frequency;
 import com.github.kozakura913.fedstorage.client.model.ModelEnderChest;
 import com.github.kozakura913.fedstorage.misc.EnderDyeButton;
 import com.github.kozakura913.fedstorage.tile.TileEnderChest;
+import com.github.kozakura913.fedstorage.tile.TileEnderEnergy;
+
 import codechicken.lib.render.CCModelLibrary;
 import codechicken.lib.render.CCRenderState;
 import codechicken.lib.render.RenderUtils;
@@ -22,14 +24,14 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 /**
  * Created by covers1624 on 4/12/2016.
  */
-public class RenderTileEnderChest extends TileEntitySpecialRenderer<TileEnderChest> {
+public class RenderTileEnderEnergy extends TileEntitySpecialRenderer<TileEnderEnergy> {
 
     private static ModelEnderChest model = new ModelEnderChest();
     public static final double phi = 1.618034;
 
     @Override
-    public void render(TileEnderChest enderChest, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
-        renderChest(enderChest.rotation, enderChest.frequency, enderChest.mode(), x, y, z, RenderUtils.getTimeOffset(enderChest.getPos()), (float) enderChest.getRadianLidAngle(partialTicks));
+    public void render(TileEnderEnergy enderChest, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
+        renderChest(enderChest.rotation, enderChest.frequency, enderChest.mode(), x, y, z, RenderUtils.getTimeOffset(enderChest.getPos()), (float)0);
         renderMode(enderChest, x, y, z, partialTicks);
     }
 
@@ -57,11 +59,11 @@ public class RenderTileEnderChest extends TileEntitySpecialRenderer<TileEnderChe
         renderButtons(freq, rotation, lidAngle);
         GlStateManager.popMatrix();
 
+        /*
         double time = ClientUtils.getRenderTime() + offset;
         Matrix4 pearlMat = RenderUtils.getMatrix(
                 new Vector3(x + 0.5, y + 0.2 + lidAngle * -0.5 + RenderUtils.getPearlBob(time), z + 0.5),
                 new Rotation(time / 3, new Vector3(0, 1, 0)), 0.04);
-
         GlStateManager.disableLighting();
         TextureUtils.changeTexture("fedstorage:textures/hedronmap.png");
         GlStateManager.pushMatrix();
@@ -70,6 +72,7 @@ public class RenderTileEnderChest extends TileEntitySpecialRenderer<TileEnderChe
         CCModelLibrary.icosahedron7.render(ccrs, pearlMat);
         ccrs.draw();
         GlStateManager.popMatrix();
+        */
         GlStateManager.enableLighting();
     }
 
@@ -83,7 +86,7 @@ public class RenderTileEnderChest extends TileEntitySpecialRenderer<TileEnderChe
         GlStateManager.enableLighting();
     }
 
-    private static void renderMode(TileEnderChest enderChest, double x, double y, double z, float partialTicks) {
+    private static void renderMode(TileEnderEnergy enderChest, double x, double y, double z, float partialTicks) {
 
         if(enderChest.mode() == 0) {
            // return;
@@ -107,7 +110,7 @@ public class RenderTileEnderChest extends TileEntitySpecialRenderer<TileEnderChe
 
         GlStateManager.pushMatrix();
 
-        EnderDyeButton ebutton = TileEnderChest.buttons[button].copy();
+        EnderDyeButton ebutton = TileEnderEnergy.buttons[button].copy();
         ebutton.rotate(0, 0.5625, 0.0625, 1, 0, 0, lidAngle);
         ebutton.rotateMeta(rot);
         Vector3[] verts = ebutton.verts;

@@ -7,6 +7,7 @@ import com.github.kozakura913.fedstorage.client.render.item.EnderChestItemRender
 import com.github.kozakura913.fedstorage.client.render.item.EnderTankItemRender;
 import com.github.kozakura913.fedstorage.item.ItemEnderStorage;
 import com.github.kozakura913.fedstorage.tile.TileEnderChest;
+import com.github.kozakura913.fedstorage.tile.TileEnderEnergy;
 import com.github.kozakura913.fedstorage.tile.TileEnderTank;
 import codechicken.lib.model.ModelRegistryHelper;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
@@ -32,6 +33,7 @@ public class ModBlocks {
         ForgeRegistries.ITEMS.register(itemEnderStorage.setRegistryName("ender_storage"));
         GameRegistry.registerTileEntity(TileEnderChest.class, "Fed Chest");
         GameRegistry.registerTileEntity(TileEnderTank.class, "Fed Tank");
+        GameRegistry.registerTileEntity(TileEnderEnergy.class, "Fed Energy");
     }
 
     @SideOnly (Side.CLIENT)
@@ -44,6 +46,7 @@ public class ModBlocks {
 
         ModelRegistryHelper.register(new ModelResourceLocation("fedstorage:ender_storage", "type=fed_chest"), new EnderChestItemRender());
         ModelRegistryHelper.register(new ModelResourceLocation("fedstorage:ender_storage", "type=fed_tank"), new EnderTankItemRender());
+        ModelRegistryHelper.register(new ModelResourceLocation("fedstorage:ender_storage", "type=fed_energy"), new EnderChestItemRender());
 
         ModelLoader.setCustomStateMapper(blockEnderStorage, new StateMap.Builder().ignore(BlockEnderStorage.VARIANTS).build());
         ModelRegistryHelper.register(new ModelResourceLocation("fedstorage:ender_storage", "normal"), ParticleDummyModel.INSTANCE);

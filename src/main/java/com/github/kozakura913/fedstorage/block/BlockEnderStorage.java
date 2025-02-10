@@ -3,6 +3,7 @@ package com.github.kozakura913.fedstorage.block;
 import com.github.kozakura913.fedstorage.api.Frequency;
 import com.github.kozakura913.fedstorage.handler.ConfigurationHandler;
 import com.github.kozakura913.fedstorage.tile.TileEnderChest;
+import com.github.kozakura913.fedstorage.tile.TileEnderEnergy;
 import com.github.kozakura913.fedstorage.tile.TileEnderTank;
 import com.github.kozakura913.fedstorage.tile.TileFrequencyOwner;
 import codechicken.lib.colour.EnumColour;
@@ -57,6 +58,8 @@ public class BlockEnderStorage extends Block implements ITileEntityProvider {
                 return new TileEnderChest();
             case 1:
                 return new TileEnderTank();
+            case 2:
+                return new TileEnderEnergy();
             default:
                 return null;
         }
@@ -216,6 +219,7 @@ public class BlockEnderStorage extends Block implements ITileEntityProvider {
     public void getSubBlocks(CreativeTabs creativeTab, NonNullList<ItemStack> list) {
         list.add(new ItemStack(this, 1, 0));
         list.add(new ItemStack(this, 1, 1));
+        list.add(new ItemStack(this, 1, 2));
     }
 
     @Override
@@ -299,7 +303,8 @@ public class BlockEnderStorage extends Block implements ITileEntityProvider {
     public static enum Type implements IStringSerializable {
 
         CHEST(0, "fed_chest"),
-        TANK(1, "fed_tank");
+        TANK(1, "fed_tank"),
+        ENERGY(2, "fed_energy");
 
         public static final Type[] VALUES = new Type[values().length];
         private final int metadata;

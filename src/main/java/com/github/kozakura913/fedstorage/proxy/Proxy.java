@@ -7,6 +7,7 @@ import com.github.kozakura913.fedstorage.item.ItemEnderPouch;
 import com.github.kozakura913.fedstorage.manager.EnderStorageManager;
 import com.github.kozakura913.fedstorage.network.EnderStorageSPH;
 import com.github.kozakura913.fedstorage.network.TankSynchroniser;
+import com.github.kozakura913.fedstorage.plugin.EnderEnergyStoragePlugin;
 import com.github.kozakura913.fedstorage.plugin.EnderItemStoragePlugin;
 import com.github.kozakura913.fedstorage.plugin.EnderLiquidStoragePlugin;
 import codechicken.lib.packet.PacketCustom;
@@ -20,6 +21,7 @@ public class Proxy {
     public void preInit() {
         EnderStorageManager.registerPlugin(new EnderItemStoragePlugin());
         EnderStorageManager.registerPlugin(new EnderLiquidStoragePlugin());
+        EnderStorageManager.registerPlugin(new EnderEnergyStoragePlugin());
         ModBlocks.init();
         ModItems.init();
         //MinecraftForge.EVENT_BUS.register(EnderStorageRecipe.init());

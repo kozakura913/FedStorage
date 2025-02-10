@@ -13,6 +13,7 @@ import com.github.kozakura913.fedstorage.api.AbstractEnderStorage;
 import com.github.kozakura913.fedstorage.handler.ConfigurationHandler;
 import com.github.kozakura913.fedstorage.manager.EnderStorageManager;
 import com.github.kozakura913.fedstorage.network.EnderStorageSPH;
+import com.github.kozakura913.fedstorage.storage.EnderEnergyStorage;
 import com.github.kozakura913.fedstorage.storage.EnderItemStorage;
 import com.github.kozakura913.fedstorage.storage.EnderLiquidStorage;
 
@@ -25,6 +26,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 
 public class FedStorage {
 	private Socket tcp_socket;
@@ -34,7 +36,7 @@ public class FedStorage {
 	private ArrayList<ItemStack> recv_queue=new ArrayList<>();//転送処理バッファ
 	private static int RECV_BUFFER_LIMIT=10;
 	private static FedStorage INSTANCE=null;
-	private static long VERSION=4;
+	private static long VERSION=5;
 	public static synchronized void init() {
 		if(INSTANCE!=null)return;
 		INSTANCE=new FedStorage();
@@ -70,6 +72,10 @@ public class FedStorage {
 					}
 					System.err.println("Connection Lost. Retry After 10s");
 					Thread.sleep(10*1000);
+					if(FMLCommonHandler.instance().getMinecraftServerInstance()==null) {
+						INSTANCE=null;
+						return;
+					}
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -106,17 +112,23 @@ public class FedStorage {
 		try {
 			while(true) {
 				Thread.sleep(100);
-				tcp_dos.writeInt(-1);//NOP
+				tcp_dos.writeByte(-1);//NOP
 				tcp_dos.flush();
 				EnderStorageManager storage = EnderStorageManager.instance(false);
 				ArrayList<AbstractEnderStorage> list=new ArrayList<>();
 				storage.storageList(list);
 				for(AbstractEnderStorage s:list) {
+					if(s instanceof AbstractEnderStorage) {
+						set_freq(s);
+					}
 					if(s instanceof EnderItemStorage) {
 						sync_item((EnderItemStorage)s);
 					}
 					if(s instanceof EnderLiquidStorage) {
 						sync_fluid((EnderLiquidStorage)s);
+					}
+					if(s instanceof EnderEnergyStorage) {
+						sync_energy((EnderEnergyStorage)s);
 					}
 				}
 			}
@@ -124,11 +136,42 @@ public class FedStorage {
 			e.printStackTrace();
 		}
 	}
-	private synchronized void sync_item(EnderItemStorage s) throws IOException {
+	private void set_freq(AbstractEnderStorage s) throws IOException {
 		String id=s.freq.left.name()+","+s.freq.middle.name()+","+s.freq.right.name();
-		tcp_dos.writeInt(1);//command
+		tcp_dos.writeByte(1);//command
 		tcp_dos.writeUTF(id);
 		tcp_dos.flush();
+	}
+	private synchronized void sync_energy(EnderEnergyStorage s) throws IOException {
+		if(s.isPull) {
+			long max=Integer.MAX_VALUE-s.local_buffer;
+			tcp_dos.writeByte(7);
+			tcp_dos.writeLong(max);
+			tcp_dos.flush();
+			long energy=tcp_dis.readLong();
+			synchronized(s) {
+				s.local_buffer+=energy;
+			}
+		}else {
+			tcp_dos.writeByte(6);
+			long send=0;
+			synchronized(s) {
+				send=s.local_buffer;
+				s.local_buffer=0;
+			}
+			long reject=send;
+			try {
+				tcp_dos.writeLong(send);
+				tcp_dos.flush();
+				reject=tcp_dis.readLong();
+			}finally {
+				synchronized(s) {
+					s.local_buffer+=reject;
+				}
+			}
+		}
+	}
+	private synchronized void sync_item(EnderItemStorage s) throws IOException {
 		try{
 			s.lastServerRejects=s.send_buffer.size();
 			s.lastServerRejects=send_item(s.send_buffer);
@@ -136,6 +179,9 @@ public class FedStorage {
 				EnderStorageSPH.sendItemServerRejects(null,s.freq,s.lastServerRejects);
 			}catch(Exception e) {
 				e.printStackTrace();
+				if(FMLCommonHandler.instance().getMinecraftServerInstance()==null) {
+					throw new IOException();
+				}
 			}
 		}finally {
 			//何らかの理由で拒絶された場合にローカル待機列に戻す
@@ -151,10 +197,6 @@ public class FedStorage {
 		}
 	}
 	private synchronized void sync_fluid(EnderLiquidStorage s) throws IOException {
-		String id=s.freq.left.name()+","+s.freq.middle.name()+","+s.freq.right.name();
-		tcp_dos.writeInt(1);//command
-		tcp_dos.writeUTF(id);
-		tcp_dos.flush();
 		{
 			FluidStack copy=null;
 			synchronized(s) {
@@ -199,7 +241,7 @@ public class FedStorage {
 		if(send_buffer==null)return;
 		String fluid_name=FluidRegistry.getFluidName(send_buffer);
 		if(fluid_name==null)return;
-		tcp_dos.writeInt(4);//command
+		tcp_dos.writeByte(4);//command
 		tcp_dos.writeUTF(fluid_name);
 		tcp_dos.writeLong(send_buffer.amount);
 		writeNBT(send_buffer.tag,tcp_dos);
@@ -215,7 +257,7 @@ public class FedStorage {
 			if(fluid_name==null||recv_buffer.amount==0)fluid_name="";
 		}
 		if(available<=0)return recv_buffer;
-		tcp_dos.writeInt(5);//command
+		tcp_dos.writeByte(5);//command
 		tcp_dos.writeUTF(fluid_name);
 		tcp_dos.writeLong(available);
 		if(recv_buffer!=null) {
@@ -250,7 +292,7 @@ public class FedStorage {
 		}
 		int available=RECV_BUFFER_LIMIT-recv_buffer.size();
 		if(available<=0)return;
-		tcp_dos.writeInt(3);//command
+		tcp_dos.writeByte(3);//command
 		tcp_dos.writeInt(available);
 		tcp_dos.flush();
 		int packet_length=tcp_dis.readInt();
