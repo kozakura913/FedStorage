@@ -92,6 +92,7 @@ public class EnderLiquidStorage extends AbstractEnderStorage implements IFluidHa
         tank.fromTag(tag.getCompoundTag("tank"));
         recv_buffer=FluidUtils.read(tag.getCompoundTag("Recv"));
         send_buffer=FluidUtils.read(tag.getCompoundTag("Send"));
+		isPull=tag.getBoolean("isPull");
     }
 
     public NBTTagCompound saveToTag() {
@@ -99,6 +100,7 @@ public class EnderLiquidStorage extends AbstractEnderStorage implements IFluidHa
         compound.setTag("tank", tank.toTag());
         compound.setTag("Recv", FluidUtils.write(recv_buffer, new NBTTagCompound()));
         compound.setTag("Send", FluidUtils.write(send_buffer, new NBTTagCompound()));
+		compound.setBoolean("isPull", isPull);
         return compound;
     }
 
