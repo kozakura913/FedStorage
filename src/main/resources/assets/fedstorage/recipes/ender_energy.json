@@ -2,7 +2,7 @@
 	"type": "fedstorage:crafting_recipe",
 	"result": {
 		"item": "fedstorage:ender_storage",
-		"data": 0
+		"data": 2
 	},
 	"pattern": [
 		"BWB",
@@ -20,7 +20,7 @@
 		},
 		"C": {
 			"type": "forge:ore_dict",
-			"ore": "chestWood"
+			"ore": "blockRedstone"
 		},
 		"B": {
 			"type": "forge:ore_dict",

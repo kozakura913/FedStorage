@@ -19,9 +19,8 @@
 			"ore": "leather"
 		},
 		"B": {
-			"type": "minecraft:item",
-			"item": "minecraft:iron_ingot",
-			"data": 0
+			"type": "forge:ore_dict",
+			"ore": "ingotIron",
 		},
 		"W": {
 			"type": "fedstorage:wool"
