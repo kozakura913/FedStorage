@@ -8,6 +8,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import com.github.kozakura913.fedstorage.api.AbstractEnderStorage;
 import com.github.kozakura913.fedstorage.handler.ConfigurationHandler;
@@ -36,7 +38,7 @@ public class FedStorage {
 	private ArrayList<ItemStack> recv_queue=new ArrayList<>();//転送処理バッファ
 	private static int RECV_BUFFER_LIMIT=10;
 	private static FedStorage INSTANCE=null;
-	private static long VERSION=5;
+	private static long VERSION=6;
 	public static synchronized void init() {
 		if(INSTANCE!=null)return;
 		INSTANCE=new FedStorage();
@@ -96,6 +98,9 @@ public class FedStorage {
 				tcp_socket=null;
 				return;
 			}
+			tcp_dos.writeByte(8);//command
+			tcp_dos.writeUTF(ConfigurationHandler.hostName);
+			tcp_dos.flush();
 			Thread thread=new Thread(this::sync_loop,"FedStorage");
 			thread.start();
 			thread.join();
@@ -112,7 +117,8 @@ public class FedStorage {
 		try {
 			while(true) {
 				Thread.sleep(100);
-				tcp_dos.writeByte(-1);//NOP
+				//tcp_dos.writeByte(-1);//NOP
+				tcp_dos.writeByte(9);//sync start
 				tcp_dos.flush();
 				EnderStorageManager storage = EnderStorageManager.instance(false);
 				ArrayList<AbstractEnderStorage> list=new ArrayList<>();
@@ -131,6 +137,8 @@ public class FedStorage {
 						sync_energy((EnderEnergyStorage)s);
 					}
 				}
+				tcp_dos.writeByte(10);//sync end
+				tcp_dos.flush();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -300,7 +308,7 @@ public class FedStorage {
 		byte[] bb=new byte[packet_length];
 		tcp_dis.readFully(bb);
 		ByteArrayInputStream pack_bis = new ByteArrayInputStream(bb);
-		DataInputStream pack_dis = new DataInputStream(pack_bis);
+		DataInputStream pack_dis = new DataInputStream(new GZIPInputStream(pack_bis));
 		int items_count=pack_dis.readInt();
 		for(int i=0;i<items_count;i++) {
 			pack_dis.readUTF();//アイテムID
@@ -336,26 +344,32 @@ public class FedStorage {
 			item_count++;
 		}
 		tcp_dos.writeByte(2);//command
-		tcp_dos.writeInt(item_count);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		DataOutputStream pack_dos = new DataOutputStream(new GZIPOutputStream(baos));
+		pack_dos.writeInt(item_count);
 		for(ItemStack stack : copy) {
 			if(stack==null)continue;
 			Item item = stack.getItem();
 			if(item==Items.AIR||item==null)continue;
 			ResourceLocation nameId = item.getRegistryName();
-			tcp_dos.writeUTF(nameId.getResourceDomain()+":"+nameId.getResourcePath());//アイテムID
-			tcp_dos.writeInt(stack.getItemDamage());//ダメージ値
-			tcp_dos.writeInt(stack.getCount());//スタックサイズ
+			pack_dos.writeUTF(nameId.getResourceDomain()+":"+nameId.getResourcePath());//アイテムID
+			pack_dos.writeInt(stack.getItemDamage());//ダメージ値
+			pack_dos.writeInt(stack.getCount());//スタックサイズ
 			NBTTagCompound nbt = stack.serializeNBT();
 			//NBTにはアイテム名など含まれるのでこれだけでもいい
-			writeNBT(nbt,tcp_dos);
+			writeNBT(nbt,pack_dos);
 		}
+		pack_dos.close();
+		byte[] pack_bb = baos.toByteArray();
+		tcp_dos.writeInt(pack_bb.length);
+		tcp_dos.write(pack_bb);
 		tcp_dos.flush();
 		int packet_length=tcp_dis.readInt();
 		if(packet_length<=0)return 0;
 		byte[] bb=new byte[packet_length];
 		tcp_dis.readFully(bb);
 		ByteArrayInputStream bis = new ByteArrayInputStream(bb);
-		DataInputStream dis = new DataInputStream(bis);
+		DataInputStream dis = new DataInputStream(new GZIPInputStream(bis));
 		int reject_count=dis.readInt();
 		int[] reject_index=null;
 		if(reject_count>0) {
