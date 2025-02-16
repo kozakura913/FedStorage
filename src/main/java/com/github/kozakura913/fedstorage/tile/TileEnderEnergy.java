@@ -31,6 +31,7 @@ public class TileEnderEnergy extends TileFrequencyOwner {
 	public int rotation;
 
 	public static EnderDyeButton[] buttons;
+	private int comparatorHint;
 
 	static {
 		buttons = new EnderDyeButton[3];
@@ -45,21 +46,23 @@ public class TileEnderEnergy extends TileFrequencyOwner {
 	@Override
 	public void update() {
 		super.update();
+		EnderEnergyStorage storage = getStorage();
+		comparatorHint=storage.energy;
 		if(!this.world.isRemote) {
-			synchronized(getStorage()) {
-				if(getStorage().isPull) {
-					int recv=(int) Math.min(getStorage().local_buffer, Integer.MAX_VALUE-getStorage().energy);
-					getStorage().energy+=recv;
-					getStorage().local_buffer-=recv;
+			synchronized(storage) {
+				if(storage.isPull) {
+					int recv=(int) Math.min(storage.local_buffer, Integer.MAX_VALUE-storage.energy);
+					storage.energy+=recv;
+					storage.local_buffer-=recv;
 				}else {
-					int send=(int) Math.max(Integer.MAX_VALUE-getStorage().local_buffer,0);
-					send=Math.min(getStorage().energy, send);
-					getStorage().energy-=send;
-					getStorage().local_buffer+=send;
+					int send=(int) Math.max(Integer.MAX_VALUE-storage.local_buffer,0);
+					send=Math.min(storage.energy, send);
+					storage.energy-=send;
+					storage.local_buffer+=send;
 				}
 			}
 		}
-		if(!this.world.isRemote&&getStorage().isPull) {
+		if(!this.world.isRemote&&storage.isPull) {
 			for (EnumFacing side: EnumFacing.VALUES) {
 				TileEntity te = world.getTileEntity(getPos().offset(side));
 				if(te == null) {
@@ -72,9 +75,9 @@ public class TileEnderEnergy extends TileFrequencyOwner {
 				if(!energy.canReceive()) {
 					continue;
 				}
-				int max=getStorage().extractEnergy(Integer.MAX_VALUE,true);
+				int max=storage.extractEnergy(Integer.MAX_VALUE,true);
 				int used=energy.receiveEnergy(max,false);
-				getStorage().extractEnergy(used, false);
+				storage.extractEnergy(used, false);
 			}
 		}
 	}
@@ -179,7 +182,7 @@ public class TileEnderEnergy extends TileFrequencyOwner {
 
     @Override
     public int comparatorInput() {
-        return getStorage().getEnergyStored()>0?15:0;
+        return comparatorHint>0?15:0;
     }
 
     @Override

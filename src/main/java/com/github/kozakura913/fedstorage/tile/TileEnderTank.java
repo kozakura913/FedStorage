@@ -153,45 +153,46 @@ public class TileEnderTank extends TileFrequencyOwner {
 		super.update();
 
 		pressure_state.update(world.isRemote);
+		EnderLiquidStorage storage = getStorage();
 		if(!world.isRemote) {
-			if(getStorage().isPull) {
-				synchronized(getStorage()) {
-					FluidStack send_buffer = getStorage().send_buffer;
+			if(storage.isPull) {
+				synchronized(storage) {
+					FluidStack send_buffer = storage.send_buffer;
 					if(send_buffer!=null) {
-						int count=getStorage().fill(send_buffer,true);
+						int count=storage.fill(send_buffer,true);
 						send_buffer.amount-=count;
 						if(send_buffer.amount<1) {
-							getStorage().send_buffer=null;
+							storage.send_buffer=null;
 						}
 					}
-					FluidStack recv_buffer = getStorage().recv_buffer;
+					FluidStack recv_buffer = storage.recv_buffer;
 					if(recv_buffer!=null) {
-						int count=getStorage().fill(recv_buffer,true);
+						int count=storage.fill(recv_buffer,true);
 						recv_buffer.amount-=count;
 						if(recv_buffer.amount<1) {
-							getStorage().recv_buffer=null;
+							storage.recv_buffer=null;
 						}
 					}
 				}
 			}else {
-				synchronized(getStorage()) {
-					FluidStack recv_buffer = getStorage().recv_buffer;
+				synchronized(storage) {
+					FluidStack recv_buffer = storage.recv_buffer;
 					if(recv_buffer!=null) {
-						int count=getStorage().fill(recv_buffer,true);
+						int count=storage.fill(recv_buffer,true);
 						recv_buffer.amount-=count;
 						if(recv_buffer.amount<1) {
-							getStorage().recv_buffer=null;
+							storage.recv_buffer=null;
 						}
 					}
-					if(getStorage().send_buffer==null) {
-						FluidStack fs = getStorage().drain(Integer.MAX_VALUE,true);
+					if(storage.send_buffer==null) {
+						FluidStack fs = storage.drain(Integer.MAX_VALUE,true);
 						if(fs!=null) {
-							getStorage().send_buffer=fs;
+							storage.send_buffer=fs;
 						}
 					}else {
-						FluidStack fs = getStorage().drain(getStorage().send_buffer,true);
+						FluidStack fs = storage.drain(storage.send_buffer,true);
 						if(fs!=null) {
-							getStorage().send_buffer.amount+=fs.amount;
+							storage.send_buffer.amount+=fs.amount;
 						}
 					}
 				}

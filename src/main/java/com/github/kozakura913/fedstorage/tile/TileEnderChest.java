@@ -56,8 +56,9 @@ public class TileEnderChest extends TileFrequencyOwner {
 	@Override
 	public void update() {
 		super.update();
-		if(!world.isRemote && getStorage().isPull) {
-			ArrayList<ItemStack> recv_buffer = getStorage().recv_buffer;
+		EnderItemStorage storage = getStorage();
+		if(!world.isRemote && storage.isPull) {
+			ArrayList<ItemStack> recv_buffer = storage.recv_buffer;
 			synchronized(recv_buffer) {
 				while(!recv_buffer.isEmpty()) {
 					int insertCount=0;
@@ -71,7 +72,7 @@ public class TileEnderChest extends TileFrequencyOwner {
 							ItemStack insertStack = stack.copy();
 							insertStack.setCount(toInsert);
 							inventory.insertItem(i, insertStack, false);
-							getStorage().markDirty();
+							storage.markDirty();
 							if(toInsert>0) {
 								insertCount+=toInsert;
 							}
@@ -79,7 +80,7 @@ public class TileEnderChest extends TileFrequencyOwner {
 							inventory.insertItem(i, stack.copy(), false);
 							recv_buffer.remove(0);
 							insertCount+=stack.getCount();
-							getStorage().markDirty();
+							storage.markDirty();
 							break;
 						}
 					}
@@ -88,7 +89,7 @@ public class TileEnderChest extends TileFrequencyOwner {
 			}
 			pushItems();
 		}else if(!world.isRemote) {
-			ArrayList<ItemStack> send_buffer = getStorage().send_buffer;
+			ArrayList<ItemStack> send_buffer = storage.send_buffer;
 			synchronized(send_buffer) {
 				if(send_buffer.isEmpty()) {
 					IItemHandler inventory = getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, EnumFacing.DOWN);
@@ -101,8 +102,8 @@ public class TileEnderChest extends TileFrequencyOwner {
 				}
 			}
 		}
-		if (!world.isRemote && (world.getTotalWorldTime() % 20 == 0 || c_numOpen != getStorage().getNumOpen())) {
-			c_numOpen = getStorage().getNumOpen();
+		if (!world.isRemote && (world.getTotalWorldTime() % 20 == 0 || c_numOpen != storage.getNumOpen())) {
+			c_numOpen = storage.getNumOpen();
 			world.addBlockEvent(getPos(), getBlockType(), 1, c_numOpen);
 			world.notifyNeighborsOfStateChange(pos, getBlockType(), true);
 		}
