@@ -38,7 +38,7 @@ public class FedStorage {
 	private ArrayList<ItemStack> recv_queue=new ArrayList<>();//転送処理バッファ
 	private static int RECV_BUFFER_LIMIT=10;
 	private static FedStorage INSTANCE=null;
-	private static long VERSION=6;
+	private static long VERSION=7;
 	public static synchronized void init() {
 		if(INSTANCE!=null)return;
 		INSTANCE=new FedStorage();
@@ -283,7 +283,9 @@ public class FedStorage {
 		String name=pack_dis.readUTF();
 		long amount=pack_dis.readLong();
 		//NBTは必ず存在するわけではない
-		NBTTagCompound nbt=readNBT(pack_dis);
+		//NBTサイズ
+		int nbt_length=pack_dis.readShort();
+		NBTTagCompound nbt=readNBT(pack_dis,nbt_length);
 		if(fluid_name.isEmpty()&&name!=null&&!name.isEmpty()) {
 			fluid_name=name;
 			Fluid f=FluidRegistry.getFluid(fluid_name);
@@ -315,12 +317,32 @@ public class FedStorage {
 			pack_dis.readInt();//ダメージ値
 			int stack_size=pack_dis.readInt();//スタックサイズ
 			//NBTにはアイテム名など含まれるのでこれだけでもいい
-			NBTTagCompound nbt = readNBT(pack_dis);
-			ItemStack is=new ItemStack(nbt);
-			is.setCount(stack_size);
-			recv_queue.add(is);
+			//NBTサイズ
+			int nbt_length=pack_dis.readShort();
+			if(nbt_length==-1) {
+				recv_queue.add(null);
+			}else {
+				NBTTagCompound nbt = readNBT(pack_dis,nbt_length);
+				ItemStack is=new ItemStack(nbt);
+				is.setCount(stack_size);
+				recv_queue.add(is);
+			}
 		}
 		if(recv_queue.isEmpty())return;
+		for(int i=0;i<items_count;i++) {
+			ItemStack is=recv_queue.get(i);
+			if(is==null) {
+				int nbt_length=tcp_dis.readInt();
+				System.out.println("big nbt "+nbt_length);
+				byte[] nbt_bytes=new byte[nbt_length];
+				tcp_dis.readFully(nbt_bytes);
+				ByteArrayInputStream nbt_bis = new ByteArrayInputStream(nbt_bytes);
+				DataInputStream nbt_dis = new DataInputStream(new GZIPInputStream(nbt_bis));
+				NBTTagCompound nbt = CompressedStreamTools.read(nbt_dis);
+				is=new ItemStack(nbt);
+				recv_queue.set(i,is);
+			}
+		}
 		synchronized(recv_buffer){
 			recv_buffer.addAll(recv_queue);
 			recv_queue.clear();
@@ -347,6 +369,7 @@ public class FedStorage {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream pack_dos = new DataOutputStream(new GZIPOutputStream(baos));
 		pack_dos.writeInt(item_count);
+		ArrayList<byte[]> big_nbt=new ArrayList<>();
 		for(ItemStack stack : copy) {
 			if(stack==null)continue;
 			Item item = stack.getItem();
@@ -357,12 +380,19 @@ public class FedStorage {
 			pack_dos.writeInt(stack.getCount());//スタックサイズ
 			NBTTagCompound nbt = stack.serializeNBT();
 			//NBTにはアイテム名など含まれるのでこれだけでもいい
-			writeNBT(nbt,pack_dos);
+			byte[] extra_nbt=writeNBT(nbt,pack_dos);
+			if(extra_nbt!=null) {
+				big_nbt.add(extra_nbt);
+			}
 		}
 		pack_dos.close();
 		byte[] pack_bb = baos.toByteArray();
 		tcp_dos.writeInt(pack_bb.length);
 		tcp_dos.write(pack_bb);
+		for(byte[] nbt:big_nbt) {
+			tcp_dos.writeInt(nbt.length);
+			tcp_dos.write(nbt);
+		}
 		tcp_dos.flush();
 		int packet_length=tcp_dis.readInt();
 		if(packet_length<=0)return 0;
@@ -388,9 +418,7 @@ public class FedStorage {
 		}
 		return reject_count;
 	}
-	private NBTTagCompound readNBT(DataInputStream dis) throws IOException {
-		//NBTサイズ
-		int nbt_length=dis.readShort();
+	private NBTTagCompound readNBT(DataInputStream dis,int nbt_length) throws IOException {
 		if(nbt_length<1)return null;
 		byte[] nbt_bytes=new byte[nbt_length];
 		//NBTタグ
@@ -399,20 +427,29 @@ public class FedStorage {
 		DataInputStream nbt_dis = new DataInputStream(nbt_bis);
 		return CompressedStreamTools.read(nbt_dis);
 	}
-	private void writeNBT(NBTTagCompound nbt,DataOutputStream dos) throws IOException {
+	private byte[] writeNBT(NBTTagCompound nbt,DataOutputStream dos) throws IOException {
 		if(nbt==null) {
 			dos.writeShort(0);
-			return;
+			return null;
 		}
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		DataOutputStream nbt_dos = new DataOutputStream(bos);
 		CompressedStreamTools.write(nbt,nbt_dos);
 		byte[] bb= bos.toByteArray();
 		int send_length=bb.length;
+		if(send_length>32767) {
+			dos.writeShort(-1);
+			bos.reset();
+			GZIPOutputStream gz = new GZIPOutputStream(bos);
+			gz.write(bb);
+			gz.close();
+			return bos.toByteArray();
+		}
 		//NBTサイズ
 		dos.writeShort(send_length);
-		if(send_length<1)return;
+		if(send_length<1)return null;
 		//NBTタグ
 		dos.write(bb);
+		return null;
 	}
 }
