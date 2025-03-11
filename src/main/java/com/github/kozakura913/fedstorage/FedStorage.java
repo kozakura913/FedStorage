@@ -296,7 +296,7 @@ public class FedStorage {
 	}
 	private synchronized void recv_item(ArrayList<ItemStack> recv_buffer) throws IOException {
 		if(recv_buffer.isEmpty()) {
-			RECV_BUFFER_LIMIT=Math.max(RECV_BUFFER_LIMIT+1,1000);
+			RECV_BUFFER_LIMIT=Math.min(RECV_BUFFER_LIMIT+1,1000);
 		}else {
 			RECV_BUFFER_LIMIT=Math.max(0,RECV_BUFFER_LIMIT-1);
 		}

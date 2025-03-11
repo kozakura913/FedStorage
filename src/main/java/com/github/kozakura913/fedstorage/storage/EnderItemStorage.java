@@ -125,7 +125,22 @@ public class EnderItemStorage extends AbstractEnderStorage implements IInventory
 		ItemStack[] list;
 		tagList = tag.getTagList("Recv", 10);
 		list = new ItemStack[tagList.tagCount()];
-		InventoryUtils.readItemStacksFromTag(list, tagList);
+		try {
+			InventoryUtils.readItemStacksFromTag(list, tagList);
+		}catch(ArrayIndexOutOfBoundsException e) {
+			e.printStackTrace();
+			//過去のバージョンで不正な量を保存した場合に問題が発生する
+			int lastIndex=0;
+			for(int i=0;i<list.length;i++) {
+				if(list[i]==null)break;
+				lastIndex=i;
+			}
+			ItemStack[] list0=new ItemStack[lastIndex+1];
+			for(int i=0;i<list0.length;i++) {
+				list0[i]=list[i];
+			}
+			list=list0;
+		}
 		recv_buffer.addAll(Arrays.asList(list));
 		tagList = tag.getTagList("Send", 10);
 		list = new ItemStack[tagList.tagCount()];
